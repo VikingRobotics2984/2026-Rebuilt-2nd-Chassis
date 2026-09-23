@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -22,19 +24,21 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.*;
 
 public class Robot extends TimedRobot {
+  public static Boolean resetLastPressed = false;
   public static char alliance = 'B';
   private Command m_autonomousCommand;
-  private Vision vision, vision2;
-  public final RobotContainer m_robotContainer;
+  //private Vision vision, vision2;
+  //public final RobotContainer m_robotContainer;
 
   public Robot() {
-    m_robotContainer = new RobotContainer();
+    //m_robotContainer = new RobotContainer();
   }
   @Override
   public void robotInit() {
+    Intake.configureCurrentLimit();
     Constants.Vision.readLayout();
-    vision = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCameraName), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam));
-    vision2 = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCamera2Name), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam2));
+    //vision = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCameraName), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam));
+    //vision2 = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCamera2Name), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam2));
   }
   
   @Override
@@ -42,8 +46,8 @@ public class Robot extends TimedRobot {
     alliance = DriverStation.getAlliance().toString().charAt(9);
     Driver_Controller.SwerveInputPeriodic();
     CommandScheduler.getInstance().run(); 
-    vision.periodic();
-    vision2.periodic();
+    //vision.periodic();
+    //vision2.periodic();
   }
 
   @Override
@@ -124,7 +128,28 @@ public class Robot extends TimedRobot {
   public void teleopInit() {}
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
+      System.out.println(Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble());
+    }
+
+    if (Driver_Controller.buttonResetIntake() && (!resetLastPressed)){
+      Intake.needReset = true;
+    } else if (resetLastPressed && (!Driver_Controller.buttonResetIntake())){
+      Intake.resetL = true;
+      Intake.resetR = true;
+    }
+
+    //if (Intake.resetLinkageEncoders()){} else
+    if (Driver_Controller.buttonIntakeIn()){
+      Intake.leftLinkageMotor.set(-0.1);
+    }else if (Driver_Controller.buttonIntakeOut()){
+      Intake.leftLinkageMotor.set(0.1);
+    }else{
+      Intake.leftLinkageMotor.set(0);
+    }
+    resetLastPressed = Driver_Controller.buttonResetIntake();
+  }
 
   @Override
   public void teleopExit() {}

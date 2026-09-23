@@ -75,13 +75,28 @@ public static Double offsetSlider(){
     return 29.84*m_Controller3.getRawAxis(1);}
 
 public static Boolean buttonEBrake(){
-    //return (m_Controller2.getRawButton(1) || m_Controller1.getRawButton(6));}
+    return false;
+    //return (m_Controller2.getRawButton(1) || m_Controller1.getRawButton(6));
+}
+
+public static Boolean buttonResetIntake(){
+    return m_Controller1.getRawButton(3);}
+public static Boolean buttonIntakeOut(){
+    return m_Controller1.getRawButton(4);}
+public static Boolean buttonIntakeIn(){
+    return m_Controller1.getRawButton(5);}
+public static Boolean switchIntakeRoller(){
+    return m_Controller1.getRawButton(10);}
+
+public static Boolean buttonBrake(){
+    return false;
+}
 
 public static Boolean withinDeadBand(){
-    // boolean button = buttonBrake(),
-    //   notMove = Math.sqrt(SwerveXPassthrough*SwerveXPassthrough+SwerveYPassthrough*SwerveYPassthrough)<RobotContainer.deadbandV,
-    //   notSpin = Math.abs(RobotContainer.rotaryCalc(false)* RobotContainer.MaxAngularRate * RobotContainer.TurnModifier) < RobotContainer.angDeadband;
-    // return button && notMove && notSpin;
+    boolean button = buttonBrake(),
+    notMove = Math.sqrt(SwerveXPassthrough*SwerveXPassthrough+SwerveYPassthrough*SwerveYPassthrough)<RobotContainer.deadbandV,
+    notSpin = Math.abs(RobotContainer.rotaryCalc(false)* RobotContainer.MaxAngularRate * RobotContainer.TurnModifier) < RobotContainer.angDeadband;
+    return button && notMove && notSpin;
 }
 public static Trigger needBrake = new Trigger(() -> (buttonEBrake() || withinDeadBand()));
 
@@ -137,8 +152,8 @@ public static void SwerveInputPeriodic(){
     }
     else{ //Controller Mode
         Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
-        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[0]*sliderMult*((flipDrive())?-1.0:1.0);
-        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[1]*sliderMult*((flipDrive())?-1.0:1.0);
+        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[0]*sliderMult;
+        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[1]*sliderMult;
         SwerveEncoderPassthrough = Math.toDegrees(Math.atan2(SwerveXPassthrough, SwerveYPassthrough));
     }
 }

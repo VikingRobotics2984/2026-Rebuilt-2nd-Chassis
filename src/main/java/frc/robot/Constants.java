@@ -17,7 +17,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
 public class Constants {
-    /*public static class Vision {
+    public static final int rightLinkageMotorID = 15;//positive power is extend
+    public static final int leftLinkageMotorID = 16;//positive power is extend
+    public static final int intakeRollerMotorID = 17;//positive power is intake
+    public static final int horizontalTransportMotorID = 18;//positive power is transport to shooter
+    public static final int upperVerticalTransportMotorID = 19;//positive power is transport to shooter
+    public static final int lowerVerticalTransportMotorID = 20;
+    public static final int leftShooterMotorID = 21;//positive power is shooting
+    public static final int rightShooterMotorID = 22;//positive power is shooting
+
+    public static final int intakePositionSensorLPort = 0;
+    public static final int intakePositionSensorRPort = 8;
+
+    public static class Vision {
         public static final String kCameraName = "FrontCam";
         public static final Transform3d kRobotToCam =
                 new Transform3d(new Translation3d(0.33, 0.0, 0.0), new Rotation3d(0, Math.toRadians(-25), 0));
@@ -41,7 +53,7 @@ public class Constants {
         // (Fake values. Experiment and determine estimation noise on an actual robot.)
         public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8);
         public static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
-    }*/
+    }
 
     public static final Command TestPath = new PathPlannerAuto("Test Auto");
 }

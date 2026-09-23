@@ -92,7 +92,7 @@ public class Vision {
     }
 
     public void periodic() {
-        if ((!Driver_Controller.visionSwitch()) && useVisionButton){
+        if (useVisionButton){
             seenTags = false;
             return;
         }
