@@ -49,13 +49,16 @@ public class Driver_Controller {
     for(int i = 0; i < 3; ++i){
         m_tempController = new XboxController(i);
         if (m_tempController.getRawButton(14) == true){
+            System.out.println("driver");
             m_Controller0 = new CommandXboxController(i);
             m_Controller1 = new Joystick(i);
         }
         else if (m_tempController.getRawButton(13) == true){
+            System.out.println("m3");
             m_Controller3 = m_tempController;
         }
         else{
+            System.out.println("m2");
             m_Controller2 = m_tempController;
         }
     }
@@ -75,18 +78,20 @@ public static Double offsetSlider(){
     return 29.84*m_Controller3.getRawAxis(1);}
 
 public static Boolean buttonEBrake(){
-    return false;
-    //return (m_Controller2.getRawButton(1) || m_Controller1.getRawButton(6));
+    //return false;
+    return (m_Controller2.getRawButton(1));// || m_Controller1.getRawButton(6));
 }
 
 public static Boolean buttonResetIntake(){
-    return m_Controller1.getRawButton(3);}
+    return m_Controller3.getRawButton(3);}
 public static Boolean buttonIntakeOut(){
-    return m_Controller1.getRawButton(4);}
+    return m_Controller3.getRawButton(4);}
 public static Boolean buttonIntakeIn(){
-    return m_Controller1.getRawButton(5);}
+    return m_Controller3.getRawButton(5);}
+public static Boolean buttonReverseIntake(){
+    return m_Controller3.getRawButton(7);}
 public static Boolean switchIntakeRoller(){
-    return m_Controller1.getRawButton(10);}
+    return m_Controller3.getRawButton(10);}
 
 public static Boolean buttonBrake(){
     return false;

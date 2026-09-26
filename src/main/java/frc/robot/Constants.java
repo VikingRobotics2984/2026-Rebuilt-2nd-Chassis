@@ -27,7 +27,7 @@ public class Constants {
     public static final int rightShooterMotorID = 22;//positive power is shooting
 
     public static final int intakePositionSensorLPort = 0;
-    public static final int intakePositionSensorRPort = 8;
+    public static final int intakePositionSensorRPort = 2;
 
     public static class Vision {
         public static final String kCameraName = "FrontCam";
