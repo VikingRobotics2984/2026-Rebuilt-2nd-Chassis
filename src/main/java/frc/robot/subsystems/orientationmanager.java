@@ -1,11 +1,14 @@
 package frc.robot.subsystems;
-//import java.util.Vector;
 import frc.robot.*;
-//import java.math.*;
-//import edu.wpi.first.math.kinematics.Odometry;
-import edu.wpi.first.wpilibj2.command.*;//drivetrain.getPigeon2().getYaw().getValueAsDouble()
-public class orientationmanager implements Subsystem{
+import edu.wpi.first.wpilibj2.command.*;
+
+
+
+public class OrientationManager /*implements Subsystem*/{
+
     public static double[] Targetpos = {6,7};
+    //public static int ticklestein = 4;
+
     public static void PointatTarget(){
 
         Driver_Controller.SwerveControlSet(true);
@@ -14,8 +17,8 @@ public class orientationmanager implements Subsystem{
         double arrowY,arrowX;
         arrowX = Targetpos[0] - myposX;//                                 if this dont work swap the values 
         arrowY = Targetpos[1] - myposY;
-        double outputthang = Math.atan2(arrowY, arrowX);
-        Driver_Controller.SwerveCommandEncoderValue = outputthang;
+        double angleofdesire = Math.atan2(arrowY, arrowX);
+        Driver_Controller.SwerveCommandEncoderValue = angleofdesire;
         //Driver_Controller.SwerveControlSet(false);
     }
     public static double[] distance(){
