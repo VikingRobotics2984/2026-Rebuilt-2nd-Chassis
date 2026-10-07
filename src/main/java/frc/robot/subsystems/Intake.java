@@ -14,12 +14,12 @@ public class Intake {
 
     public static TalonFX intakeRollerMotor = new TalonFX(Constants.intakeRollerMotorID);
 
-    public static DigitalInput positioningSensorL = new DigitalInput(Constants.intakePositionSensorLPort);
-    public static DigitalInput positioningSensorR = new DigitalInput(Constants.intakePositionSensorRPort);
+    public static DigitalInput positioningSensorL = new DigitalInput(8);//Constants.intakePositionSensorLPort);
+    public static DigitalInput positioningSensorR = new DigitalInput(9);//Constants.intakePositionSensorRPort);
     static DigitalInput[] sensorList = new DigitalInput[] {positioningSensorL, positioningSensorR};
     
     // method to apply current limit for the linkage motors
-    public static final double maxCurrent = 2.5;// set the current limit to 2 and the stator limit to double that
+    public static final double maxCurrent = 3.5;// set the current limit to 2 and the stator limit to double that
     public static void configureCurrentLimit(){
         for (TalonFX item: motorList){// do the same thing for the 2 motors
             TalonFXConfigurator configurator = item.getConfigurator();
@@ -38,8 +38,8 @@ public class Intake {
     public static Boolean needReset = true, // variable that needs to be true to START resetting the encoders
         resetL = false, resetR = false;// variables for if the left and right sides have been reset
     public static Double farPower = 0.2, smallPower = 0.1;
+    public static Double[] linkagePow = {0.0, 0.0};
     public static Double[] resetLinkageEncoders(){
-        Double[] newPow = {0.0, 0.0};
         if (needReset){
             resetL = false;
             resetR = false;
@@ -55,11 +55,11 @@ public class Intake {
             DigitalInput curSensor = sensorList[i];
 
             // set the motor to a power if it isn't already
-            if (needReset || (Math.abs(curMotor.get()) < 0.01)){
+            if (needReset){
                 if (curSensor.get() == true){ // positive power if the sensor isn't triggered
-                    newPow[i] = -farPower;
+                    linkagePow[i] = -farPower;
                 }else{
-                    newPow[i] = smallPower;
+                    linkagePow[i] = smallPower;
                 }
                 continue;
             }
@@ -67,20 +67,21 @@ public class Intake {
             // check if the sensor value has changed
             if (curSensor.get() && curMotor.get() > 0){
                 // reset encoder
+                linkagePow[i] = 0.0;
                 curMotor.setPosition(0.0);
                 if (i == 0) resetL = true;
                 else resetR = true;
             }else if ((!curSensor.get()) && curMotor.get() < 0){// if the sensor was triggered approaching from the extended direction, make it approach from the other direction
-                newPow[i] = smallPower;
+                linkagePow[i] = smallPower;
             }
         }
         needReset = false;
-        return newPow;// return true if and only if both motors are reset
+        return linkagePow;
     }
 
     // method for moving the intake - extending, retracting, going to neutral
-    public static final Double maxSpeed = 0.1, // exactly what it looks like; max speed for moving the intake around
-        deadZone = 1.0; // how far away in motor rotations it is from the correct position when it stops ~= 360*deadzone/(gear ratio n:1) degrees, currently about 4.5 each direction
+    public static final Double maxSpeed = 0.2, // exactly what it looks like; max speed for moving the intake around
+        deadZone = 0.5; // how far away in motor rotations it is from the correct position when it stops ~= 360*deadzone/(gear ratio n:1) degrees, currently about 4.5 each direction
     public static Double[] moveIntakeTo(String position){
 
         Double posNum; // convert the position from a string to a numerical value
@@ -89,13 +90,13 @@ public class Intake {
             case "inside":case "Inside":
             case "retract":case "Retract":
             case "retracted":case "Retracted":
-                posNum = 7.0;
+                posNum = -3.0;
                 break;
             case "out":case "Out":
             case "outside":case "Outside":
             case "extend":case "Extend":
             case "extended":case "Extended":
-                posNum = 14.0;//28.0;
+                posNum = 20.0;//28.0;
                 break;
             case "neutral":case "Neutral":
             default:
@@ -112,9 +113,9 @@ public class Intake {
                 curMotor.set(0.0);
             }else{ // if not in the deadzone, power is proportional to error
                 if (error < 0){
-                    newPow[i] = Math.max(-maxSpeed, error/10+0.05);
+                    newPow[i] = Math.max(-maxSpeed, error/20+0.05);
                 }else{
-                    newPow[i] = Math.min(maxSpeed, error/10-0.05);
+                    newPow[i] = Math.min(maxSpeed, error/20-0.05);
                 }
             }
         }

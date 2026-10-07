@@ -64,6 +64,11 @@ public class Driver_Controller {
     }
 }
 
+public static Boolean buttonAutoOrient(){
+    return m_Controller1.getRawButton(2);}
+public static Boolean buttonVisionToggle(){
+    return m_Controller1.getRawButton(6);}
+
 public static Double upperDriverSlider(){
     return m_Controller1.getRawAxis(3);}
 public static Double lowerDriverSlider(){
@@ -78,9 +83,17 @@ public static Double offsetSlider(){
     return 29.84*m_Controller3.getRawAxis(1);}
 
 public static Boolean buttonEBrake(){
-    //return false;
-    return (m_Controller2.getRawButton(1));// || m_Controller1.getRawButton(6));
+    return (m_Controller2.getRawButton(1) || m_Controller1.getRawButton(3));
 }
+
+public static Boolean buttonPreloadTransport(){
+    return m_Controller3.getRawButton(2);}
+public static Boolean buttonTransport(){
+    return m_Controller2.getRawButton(4);}
+public static Boolean buttonReverseTransport(){
+    return m_Controller3.getRawButton(6);}
+public static Boolean buttonReverseShooter(){
+    return m_Controller3.getRawButton(8);}
 
 public static Boolean buttonResetIntake(){
     return m_Controller3.getRawButton(3);}
@@ -94,7 +107,7 @@ public static Boolean switchIntakeRoller(){
     return m_Controller3.getRawButton(10);}
 
 public static Boolean buttonBrake(){
-    return false;
+    return m_Controller3.getRawButton(2);
 }
 
 public static Boolean withinDeadBand(){
@@ -103,7 +116,7 @@ public static Boolean withinDeadBand(){
     notSpin = Math.abs(RobotContainer.rotaryCalc(false)* RobotContainer.MaxAngularRate * RobotContainer.TurnModifier) < RobotContainer.angDeadband;
     return button && notMove && notSpin;
 }
-public static Trigger needBrake = new Trigger(() -> (buttonEBrake() || withinDeadBand()));
+public static Trigger needBrake = new Trigger(() -> (withinDeadBand()));
 
 public static Double shooterOffsetSlider(){
     return 20*m_Controller3.getRawAxis(3);}
@@ -111,9 +124,8 @@ public static Double shooterOffsetSlider(){
 public static int kitchenStove(){
     int num = (m_Controller2.getRawButton(11)?1:0)+(m_Controller2.getRawButton(10)?2:0)+(m_Controller2.getRawButton(9)?3:0)+(m_Controller2.getRawButton(12)?6:0);
     num = 11-((num+6)%12);
-    return ((num>7)?7:num);
+    return num;
 }
-
 
 final  double pos[] = {-1.0,-0.75,-0.5,-0.1 ,-0.03, 0,0.03, 0.1, 0.5, 0.75,1};
 final  double pwr[] = {-1  , -0.3,-0.1,-0.02,    0, 0,   0,0.02, 0.1,   .3,1};
