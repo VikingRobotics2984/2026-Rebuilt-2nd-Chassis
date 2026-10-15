@@ -56,7 +56,11 @@ public class Transport {
                 upperVerticalPower /= 2;
             }
         }else {
-            horizontalPower = 0.0;
+            if (Driver_Controller.switchIntakeRoller()){
+                horizontalPower = powerArray[kitchenStovePos];
+            }else{
+                horizontalPower = 0.0;
+            }
             lowerVerticalPower = 0.0;
             upperVerticalPower = 0.0;
         }

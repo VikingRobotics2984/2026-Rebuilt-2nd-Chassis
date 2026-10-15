@@ -25,7 +25,7 @@ public class Robot extends TimedRobot {
   public static Boolean resetLastPressed = false;
   public static char alliance = 'B';
   private Command m_autonomousCommand;
-  //private Vision vision, vision2;
+  private Vision vision, vision2;
   public final RobotContainer m_robotContainer;
   public static DigitalInput[] sensors = {new DigitalInput(0), new DigitalInput(1), new DigitalInput(2), new DigitalInput(3), new DigitalInput(5)};
 
@@ -37,8 +37,8 @@ public class Robot extends TimedRobot {
     Intake.configureCurrentLimit();
     Transport.configureCurrentLimit();
     Constants.Vision.readLayout();
-    //vision = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCameraName), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam));
-    //vision2 = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCamera2Name), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam2));
+    vision = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCameraName), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam));
+    vision2 = new Vision(RobotContainer.drivetrain::addVisionMeasurement, new PhotonCamera(Constants.Vision.kCamera2Name), new PhotonPoseEstimator(Constants.Vision.kTagLayout, Constants.Vision.kRobotToCam2));
   }
   
   @Override
@@ -46,16 +46,16 @@ public class Robot extends TimedRobot {
     alliance = DriverStation.getAlliance().toString().charAt(9);
     Driver_Controller.SwerveInputPeriodic();
     CommandScheduler.getInstance().run(); 
-    //vision.periodic();
-    //vision2.periodic();
-    if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
+    vision.periodic();
+    vision2.periodic();
+    /*if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
       for (int i = 0; i < 5; ++i){
         System.out.print(i);
         System.out.print(" ");
         System.out.print(sensors[i].get());
         System.out.println();
       }
-    }
+    }*/
   }
 
   @Override

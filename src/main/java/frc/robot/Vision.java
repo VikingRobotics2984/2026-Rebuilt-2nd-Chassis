@@ -92,7 +92,7 @@ public class Vision {
     }
 
     public void periodic() {
-        if (useVisionButton){
+        if (useVisionButton && false){
             seenTags = false;
             return;
         }

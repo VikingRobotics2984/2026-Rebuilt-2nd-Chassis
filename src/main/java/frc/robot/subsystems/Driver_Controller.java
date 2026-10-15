@@ -107,7 +107,7 @@ public static Boolean switchIntakeRoller(){
     return m_Controller3.getRawButton(10);}
 
 public static Boolean buttonBrake(){
-    return m_Controller3.getRawButton(2);
+    return m_Controller1.getRawButton(1);
 }
 
 public static Boolean withinDeadBand(){

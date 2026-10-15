@@ -14,8 +14,11 @@ public class Shooter {
     public static Boolean close = false;
     public static Double avgSpeed = 0.0;
 
+    public static final Double[]
+        interpolationDists = {1.0, 1.5, 2.0, 2.5, 3.0},
+        interpolationSpeeds = {40.0, 45.0, 50.0, 57.5, 67.0};
+
     public static Double speedController(Double desiredSpeed){
-        close = true;
         int nextSpeedIndex = (speedIndex+1)%5;
 
         Double velocity = Math.abs(rightShooter.getVelocity().getValueAsDouble()); // rotations per second
@@ -33,14 +36,12 @@ public class Shooter {
         curPower += i;
         d = accel*(-0.015);
 
-        if (velocity < desiredSpeed*0.9 || velocity > desiredSpeed*1.1)
-            close = false;
-        
-        if (close){
-            //LED.setPattern('B');
-        }else{
+        if (velocity < desiredSpeed*0.9 || velocity > desiredSpeed*1.1){ // check if we are within 10% of correct speed
             //LED.setPattern('R');
+        }else{
+            //LED.setPattern('B');
         }
+
         avgSpeed += velocity/2;
         speedIndex = nextSpeedIndex;
         return Math.min(1.0, Math.max(0.0, p+curPower+d));

@@ -19,7 +19,7 @@ public class Intake {
     static DigitalInput[] sensorList = new DigitalInput[] {positioningSensorL, positioningSensorR};
     
     // method to apply current limit for the linkage motors
-    public static final double maxCurrent = 3.5;// set the current limit to 2 and the stator limit to double that
+    public static final double maxCurrent = 3.0;// set the current limit to 2 and the stator limit to double that
     public static void configureCurrentLimit(){
         for (TalonFX item: motorList){// do the same thing for the 2 motors
             TalonFXConfigurator configurator = item.getConfigurator();
@@ -39,6 +39,8 @@ public class Intake {
         resetL = false, resetR = false;// variables for if the left and right sides have been reset
     public static Double farPower = 0.2, smallPower = 0.1;
     public static Double[] linkagePow = {0.0, 0.0};
+    public static int[] highCurrentNum = {0, 0};
+    public static int highCurrentThreshold = 4;
     public static Double[] resetLinkageEncoders(){
         if (needReset){
             resetL = false;
@@ -54,6 +56,21 @@ public class Intake {
             TalonFX curMotor = motorList[i];
             DigitalInput curSensor = sensorList[i];
 
+            if (curMotor.getSupplyCurrent().getValueAsDouble() > maxCurrent*0.8){
+                highCurrentNum[i] = Math.min(highCurrentThreshold, highCurrentNum[i]+1);
+            }else{
+                highCurrentNum[i] = Math.max(0, highCurrentNum[i]-1);
+            }
+                
+            if (highCurrentNum[i] >= highCurrentThreshold){
+                linkagePow[i] = 0.0;
+                curMotor.setPosition(0.0);
+                if (i == 0) resetL = true;
+                else resetR = true;
+            }else
+                linkagePow[i] = -farPower;
+
+            /* the following is if we use beam break
             // set the motor to a power if it isn't already
             if (needReset){
                 if (curSensor.get() == true){ // positive power if the sensor isn't triggered
@@ -74,6 +91,7 @@ public class Intake {
             }else if ((!curSensor.get()) && curMotor.get() < 0){// if the sensor was triggered approaching from the extended direction, make it approach from the other direction
                 linkagePow[i] = smallPower;
             }
+                */
         }
         needReset = false;
         return linkagePow;
@@ -90,17 +108,17 @@ public class Intake {
             case "inside":case "Inside":
             case "retract":case "Retract":
             case "retracted":case "Retracted":
-                posNum = -3.0;
+                posNum = 2.0;
                 break;
             case "out":case "Out":
             case "outside":case "Outside":
             case "extend":case "Extend":
             case "extended":case "Extended":
-                posNum = 20.0;//28.0;
+                posNum = 25.0;
                 break;
             case "neutral":case "Neutral":
             default:
-                posNum = 10.0;//14.0;
+                posNum = 15.0;
                 break;
         }
         Double[] newPow = {0.0, 0.0};
