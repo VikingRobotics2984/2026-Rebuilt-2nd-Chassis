@@ -7,6 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DriverStation;
 
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.RobotContainer;
 
 public class Transport {
@@ -38,8 +39,20 @@ public class Transport {
     }
 
     public static final Double[] powerArray = {0.3, 0.4, 0.5, 0.6, 0.75};
-    //public static final Double[] lowerVerticalPowers = {0.9, 0.75, 0.65, 0.55, 0.35};
-    //public static final Double[] upperVerticalPowers = {1.0, 0.8, 0.7, 0.6, 0.4};
+
+    public static void autoTransportPower(){
+        int kitchenStovePos = 4;
+        horizontalPower = powerArray[kitchenStovePos]+0.2;
+        if (Shooter.close && Robot.transporting && ((Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)
+            || (!Driver_Controller.SwerveCommandControl))){
+            lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
+            upperVerticalPower = powerArray[kitchenStovePos]+0.2;
+        }else {
+            lowerVerticalPower = 0.0;
+            upperVerticalPower = 0.0;
+        }
+    }
+
     
     public static void transportPower(){
         int kitchenStovePos = Math.max(0, Driver_Controller.kitchenStove()-7);
@@ -48,18 +61,14 @@ public class Transport {
             horizontalPower = -(powerArray[kitchenStovePos]+0.2);
             lowerVerticalPower = -(powerArray[kitchenStovePos]+0.1);
             upperVerticalPower = -powerArray[kitchenStovePos];
-        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close && 
-            ((Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 5)
-            || (!Driver_Controller.SwerveCommandControl))){
-                
+        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close){
             horizontalPower = powerArray[kitchenStovePos]+0.2;
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
-            if (Driver_Controller.buttonPreloadTransport()){
-                horizontalPower /= 2;
-                lowerVerticalPower /= 2;
-                upperVerticalPower /= 2;
-            }
+        }else if (Driver_Controller.buttonPreloadTransport()){
+                horizontalPower /= 0.5;
+                lowerVerticalPower /= 0.5;
+                upperVerticalPower /= 0.5;
         }else {
             if (System.nanoTime()%(2500*1000*1000) < (750*1000*1000) && Driver_Controller.switchIntakeRoller()){
                 horizontalPower = powerArray[kitchenStovePos]+0.2;

@@ -110,7 +110,7 @@ public class Intake {
     }
 
     // method for moving the intake - extending, retracting, going to neutral
-    public static final Double maxSpeed = 0.2, // exactly what it looks like; max speed for moving the intake around
+    public static final Double maxSpeed = 0.3, // exactly what it looks like; max speed for moving the intake around
         deadZone = 0.5; // how far away in motor rotations it is from the correct position when it stops ~= 360*deadzone/(gear ratio n:1) degrees, currently about 4.5 each direction
     public static Double[] moveIntakeTo(String position){
 

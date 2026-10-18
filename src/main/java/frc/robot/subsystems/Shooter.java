@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.Autonomous;
 import frc.robot.Constants;
 import frc.robot.Robot;
@@ -37,7 +38,7 @@ public class Shooter {
         );
 
         int lBound = 0, uBound = 1;
-        while (uBound < (interpolationDists.length-1) && interpolationDists[lBound] < dist){
+        while (uBound < (interpolationDists.length-1) && interpolationDists[uBound] < dist){
             uBound++;
             lBound++;
         }
@@ -45,8 +46,8 @@ public class Shooter {
         Double lSpeed = interpolationSpeeds[lBound], uSpeed = interpolationSpeeds[uBound];
         Double lDist = interpolationDists[lBound], uDist = interpolationDists[uBound];
 
-        Double speed = ((lSpeed*(dist-lDist))
-            +(uSpeed*(uDist-dist)))/(uDist-lDist);
+        Double speed = ((lSpeed*(-dist+uDist))
+            +(uSpeed*(-lDist+dist)))/(uDist-lDist);
         return speed;
     }
 
@@ -58,13 +59,13 @@ public class Shooter {
         Double accel = (velocity-prevSpeed[nextSpeedIndex]);// rotations per second per second, based on .1 second ago
 
         Double p, i, d;
-        p = (desiredSpeed*0.01)/1.2; // 100 rps is max power?
-        p += (desiredSpeed-velocity)*0.004;
-        i = (desiredSpeed-velocity)*0.00001;
+        p = (desiredSpeed*0.01)/1.1; // 100 rps is max power?
+        p += (desiredSpeed-velocity)*0.004*2;
+        i = (desiredSpeed-velocity)*0.00001/3;
         curPower += i;
         d = accel*(-0.005);
 
-        if (velocity < (desiredSpeed-5) || velocity > (desiredSpeed+5)){ // check if we are within 10% of correct speed
+        if (velocity < (desiredSpeed-10) || velocity > (desiredSpeed+10)){ // check if we are within 10% of correct speed
             close = false;
             LED.setPattern('R');
         }else{
@@ -74,6 +75,6 @@ public class Shooter {
 
         avgSpeed += velocity/2;
         speedIndex = nextSpeedIndex;
-        return Math.min(1.0, Math.max(0.0, p+curPower+d));
+        return Math.min(1.0, Math.max(0.0, (p+curPower+d)*12/Math.abs(RobotController.getBatteryVoltage())));
     }
 }

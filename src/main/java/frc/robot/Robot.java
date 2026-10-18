@@ -77,6 +77,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    Intake.needReset = true;
     Autonomous.setupAutos();
     autoState = 0;
     waitCnt = RobotContainer.waitCounter.getSelected();
@@ -90,14 +91,20 @@ public class Robot extends TimedRobot {
     hopperState = "retracted";
   }
 
+  public static Boolean transporting = false, spinShooters = false;
+  public static Double rollerPow;
   @Override
   public void autonomousPeriodic() {
     Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
     Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
-    Boolean spinShooters = keepSpinning;
-    Boolean transporting = false;
+    spinShooters = keepSpinning;
+    transporting = false;
     Boolean orienting = false;
-    Double rollerPow = 0.0;
+    rollerPow = 0.0;
+    Transport.horizontalPower = 0.0;
+    Transport.lowerVerticalPower = 0.0;
+    Transport.upperVerticalPower = 0.0;
+
     switch (autoState){
       case 0://wait for the correct amount of time
         if (--waitCnt < 0){// waitCnt was chosen by smartDashboard
@@ -110,7 +117,6 @@ public class Robot extends TimedRobot {
         switch (selectedPass) {
           case "full":
             hopperState = "extend";
-            rollerPow = -1.0;
             if (Autonomous.fullPassAuto()){
               autoState++;
               Autonomous.setScoringSpline();
@@ -118,7 +124,6 @@ public class Robot extends TimedRobot {
             break;
           case "half":
             hopperState = "extend";
-            rollerPow = -1.0;
             if (Autonomous.halfPassAuto()){
               autoState++;
               Autonomous.setScoringSpline();
@@ -128,7 +133,7 @@ public class Robot extends TimedRobot {
             autoState++;
             break;
           case "no intake":
-            keepSpinning = true;
+            spinShooters = true;
             Double xError = ((alliance=='B')?2:(Autonomous.centerX*2-2))-odoX;
             Driver_Controller.SwerveCommandXValue = Math.max(-0.5, Math.min(xError, 0.5));
             Driver_Controller.SwerveCommandYValue = 0.0;
@@ -218,31 +223,29 @@ public class Robot extends TimedRobot {
             }
             break;
           case "neutral":
+            hopperState = "extend";
             if (Autonomous.autoRamp()){
               autoState++;
-              hopperState = "extend";
               RobotContainer.stopMovement();
             }
             break;
         }
         break;
     }
+    Double shooterPow = 0.0;
     if (spinShooters){
-      Double shooterPow = Shooter.speedController(Shooter.interpolatePower());
-      Shooter.leftShooter.set(shooterPow);
-      Shooter.rightShooter.set(shooterPow);
+      shooterPow = Shooter.speedController(Shooter.interpolatePower());
     }
+    Shooter.leftShooter.set(shooterPow);
+    Shooter.rightShooter.set(shooterPow);
     if (orienting){
       
       Double hubX = (alliance == 'B')?Autonomous.hubX:(Autonomous.centerX*2-Autonomous.hubX);
       Double angle = Math.toDegrees(Math.atan2(Autonomous.centerY-odoY, hubX-odoX))+2;
       Driver_Controller.SwerveCommandEncoderValue = angle;
     }
+    Transport.autoTransportPower();
     if (transporting){
-      Transport.transportPower();
-      Transport.horizontalTransportMotor.set(TalonSRXControlMode.PercentOutput, Transport.horizontalPower);
-      Transport.upperVerticalTransportMotor.set(TalonSRXControlMode.PercentOutput, -Transport.upperVerticalPower);
-      Transport.lowerVerticalTransportMotor.set(Transport.lowerVerticalPower);
       hopperState = "retract";
     }
 
@@ -251,6 +254,9 @@ public class Robot extends TimedRobot {
     if (!resetting){
       linkagePow = Intake.moveIntakeTo(hopperState);
     }
+    Transport.horizontalTransportMotor.set(TalonSRXControlMode.PercentOutput, Transport.horizontalPower);
+    Transport.upperVerticalTransportMotor.set(TalonSRXControlMode.PercentOutput, -Transport.upperVerticalPower);
+    Transport.lowerVerticalTransportMotor.set(Transport.lowerVerticalPower);
     Intake.intakeRollerMotor.set(rollerPow);
     Intake.motorList[0].set(linkagePow[0]);
     Intake.motorList[1].set(linkagePow[1]);
@@ -329,10 +335,11 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     Double[] linkagePow = {0.0, 0.0};
     Double rollerPow = 0.0;
-    Double shooterSpeed = 5*(Driver_Controller.lowerDriverSlider())+Shooter.interpolatePower();
+    Double shooterSpeed = Shooter.interpolatePower();
+    if (Driver_Controller.buttonUseOffset()) shooterSpeed += 5*(Driver_Controller.lowerDriverSlider());
     Double shooterPow = 0.0;
 
-    if (Driver_Controller.m_Controller3.getRawButton(9)){
+    if (Driver_Controller.shooterSwitch()){
       shooterPow = Shooter.speedController(shooterSpeed);
     }else{
       if (vision.seenTags || vision2.seenTags){
@@ -349,7 +356,7 @@ public class Robot extends TimedRobot {
 
     if (Driver_Controller.buttonReverseIntake()){
       rollerPow = 1.0;
-    } else if (Driver_Controller.switchIntakeRoller()){
+    } else if (Driver_Controller.switchIntakeRoller() && (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 10) && (Intake.rightLinkageMotor.getRotorPosition().getValueAsDouble() > 10)){
       rollerPow = -1.0;
     }
 
@@ -377,13 +384,19 @@ public class Robot extends TimedRobot {
       RobotContainer.stopMovement();
       shooterPow = 0.0;
     }else{
-      if (Driver_Controller.m_Controller3.getRawButton(9) && Driver_Controller.buttonAutoOrient()){
+      if (Driver_Controller.buttonBumpOrient()){
+        Driver_Controller.SwerveControlSet(true);
+        Driver_Controller.SwerveCommandEncoderValue = Autonomous.orientBump();
+        Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
+        Driver_Controller.SwerveCommandXValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[0]*sliderMult;
+        Driver_Controller.SwerveCommandYValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[1]*sliderMult;
+      }else if (Driver_Controller.buttonAutoOrient()){
         Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
         Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
+        Driver_Controller.SwerveControlSet(true);
         if (((alliance == 'B') && (odoX < Autonomous.hubX)) || ((alliance == 'R') && (odoX > Autonomous.centerX*2-Autonomous.hubX))){
           Double hubX = (alliance == 'B')?Autonomous.hubX:(Autonomous.centerX*2-Autonomous.hubX);
           Double angle = Math.toDegrees(Math.atan2(Autonomous.centerY-odoY, hubX-odoX))+2;
-          Driver_Controller.SwerveControlSet(true);
           Driver_Controller.SwerveCommandEncoderValue = angle;
         }else{
           if (alliance == 'B'){
@@ -407,9 +420,9 @@ public class Robot extends TimedRobot {
     Shooter.leftShooter.set(shooterPow);
     Shooter.rightShooter.set(shooterPow);
     if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
-      System.out.println(Shooter.interpolatePower());
+      System.out.println(shooterSpeed);
       System.out.println(Shooter.dist);
-      System.out.println(Math.abs(Shooter.rightShooter.getVelocity().getValueAsDouble())-Shooter.interpolatePower());
+      System.out.println(Math.abs(Shooter.rightShooter.getVelocity().getValueAsDouble())-shooterSpeed);
       System.out.println();
     }
     // if (Driver_Controller.m_Controller2.getRawButton(1))Intake.leftLinkageMotor.set(0.2); else

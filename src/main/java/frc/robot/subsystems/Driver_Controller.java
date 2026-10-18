@@ -65,6 +65,10 @@ public static Boolean buttonAutoOrient(){
     return m_Controller1.getRawButton(1);}
 public static Boolean buttonVisionToggle(){
     return m_Controller1.getRawButton(6);}
+public static Boolean buttonUseOffset(){
+    return m_Controller1.getRawButton(5);}
+public static Boolean buttonBumpOrient(){
+    return m_Controller1.getRawButton(2);}
 
 public static Double upperDriverSlider(){
     return m_Controller1.getRawAxis(3);}
@@ -86,18 +90,22 @@ public static Boolean buttonEBrake(){
 public static Boolean buttonPreloadTransport(){
     return m_Controller3.getRawButton(2);}
 public static Boolean buttonTransport(){
-    return m_Controller2.getRawButton(4);}
+    return m_Controller2.getRawButton(4) || autoShoot();}
 public static Boolean buttonReverseTransport(){
     return m_Controller3.getRawButton(6);}
 public static Boolean buttonReverseShooter(){
     return m_Controller3.getRawButton(8);}
 
+public static Boolean shooterSwitch(){
+    return m_Controller3.getRawButton(9) || autoShoot();}
+public static Boolean autoShoot(){
+    return m_Controller3.getRawButton(12);}
 public static Boolean buttonResetIntake(){
     return m_Controller3.getRawButton(3);}
 public static Boolean buttonIntakeOut(){
     return m_Controller3.getRawButton(4);}
 public static Boolean buttonIntakeIn(){
-    return m_Controller3.getRawButton(5);}
+    return m_Controller3.getRawButton(5) || autoShoot();}
 public static Boolean buttonReverseIntake(){
     return m_Controller3.getRawButton(7);}
 public static Boolean switchIntakeRoller(){

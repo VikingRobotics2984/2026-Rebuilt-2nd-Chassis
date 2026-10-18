@@ -40,7 +40,7 @@ public class RobotContainer {
     public static double TurnModifier = 0.2;
     private static double rotaryOffset = 0;
     /* Setting up bindings for necessary control of the swerve drive platform */
-    public static Double deadbandV = MaxSpeed * 0.1/5, angDeadband = MaxAngularRate * 0.1*0.4;
+    public static Double deadbandV = MaxSpeed * 0.1/5*2, angDeadband = MaxAngularRate * 0.1*0.4;
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(deadbandV).withRotationalDeadband(angDeadband) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors

@@ -92,7 +92,7 @@ public class Vision {
     }
 
     public void periodic() {
-        if (useVisionButton && (!Driver_Controller.buttonVisionToggle())){
+        if (useVisionButton && ((!Driver_Controller.buttonVisionToggle()) || Driver_Controller.buttonAutoOrient())){
             seenTags = false;
             return;
         }
