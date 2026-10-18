@@ -32,13 +32,13 @@ public class Constants {
     public static class Vision {
         public static final String kCameraName = "LeftCam";
         public static final Transform3d kRobotToCam =
-                new Transform3d(new Translation3d(0.0, 26.25/(39.4*2), 0.0), new Rotation3d(0, Math.toRadians(-25), Math.toRadians(-45)));
+                new Transform3d(new Translation3d(0.0, 26.25/(39.4*2), 0.0), new Rotation3d(0, Math.toRadians(-25), Math.toRadians(25)));
 
         public static AprilTagFieldLayout kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
         public static final String kCamera2Name = "RightCam";
         public static final Transform3d kRobotToCam2 =
-                new Transform3d(new Translation3d(0.0, -26.25/(39.4*2), 0.0), new Rotation3d(0, Math.toRadians(-25), Math.toRadians(45)));
+                new Transform3d(new Translation3d(0.0, -26.25/(39.4*2), 0.0), new Rotation3d(0, Math.toRadians(-25), Math.toRadians(-25)));
 
         // The layout of the AprilTags on the field
         public static void readLayout(){

@@ -2,7 +2,10 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import frc.robot.Autonomous;
 import frc.robot.Constants;
+import frc.robot.Robot;
+import frc.robot.RobotContainer;
 
 public class Shooter {
     public static TalonFX rightShooter = new TalonFX(Constants.rightShooterMotorID);
@@ -15,8 +18,37 @@ public class Shooter {
     public static Double avgSpeed = 0.0;
 
     public static final Double[]
-        interpolationDists = {1.0, 1.5, 2.0, 2.5, 3.0},
-        interpolationSpeeds = {40.0, 45.0, 50.0, 57.5, 67.0};
+        interpolationDists = {-99999.9, 2.374,  2.894,  3.440,  3.711,  4.391,  4.903,  5.385,    99999.9},
+        interpolationSpeeds = {50.1,    50.1,   54.1,   56.2,   59.7,   64.1,   66.6,   71.2,     71.2};
+    public static Double dist = 0.0;
+    public static Double interpolatePower(){
+        Double posX = RobotContainer.drivetrain.getState().Pose.getX();
+        Double posY = RobotContainer.drivetrain.getState().Pose.getY();
+        Double hubY = Autonomous.centerY;
+        Double hubX;
+        if (Robot.alliance == 'B'){
+            hubX = Autonomous.hubX;
+        }else{
+            hubX = Autonomous.centerX*2-Autonomous.hubX;//if red alliance, flip the hub x over the center
+        }
+        dist = Math.sqrt(
+            Math.pow(posX-hubX, 2)+
+            Math.pow(posY-hubY, 2)
+        );
+
+        int lBound = 0, uBound = 1;
+        while (uBound < (interpolationDists.length-1) && interpolationDists[lBound] < dist){
+            uBound++;
+            lBound++;
+        }
+
+        Double lSpeed = interpolationSpeeds[lBound], uSpeed = interpolationSpeeds[uBound];
+        Double lDist = interpolationDists[lBound], uDist = interpolationDists[uBound];
+
+        Double speed = ((lSpeed*(dist-lDist))
+            +(uSpeed*(uDist-dist)))/(uDist-lDist);
+        return speed;
+    }
 
     public static Double speedController(Double desiredSpeed){
         int nextSpeedIndex = (speedIndex+1)%5;
@@ -26,20 +58,18 @@ public class Shooter {
         Double accel = (velocity-prevSpeed[nextSpeedIndex]);// rotations per second per second, based on .1 second ago
 
         Double p, i, d;
-        p = desiredSpeed*0.0125/1.25; // 80 rps is max power?
-        if ((desiredSpeed-velocity) < 0){
-            p += (desiredSpeed-velocity)*0.01*0; // needs to slow down
-        }else{
-            p += (desiredSpeed-velocity)*0.02*0; // needs to go faster
-        }
-        i = (desiredSpeed-velocity)*0.00005/3;
+        p = (desiredSpeed*0.01)/1.2; // 100 rps is max power?
+        p += (desiredSpeed-velocity)*0.004;
+        i = (desiredSpeed-velocity)*0.00001;
         curPower += i;
-        d = accel*(-0.015);
+        d = accel*(-0.005);
 
-        if (velocity < desiredSpeed*0.9 || velocity > desiredSpeed*1.1){ // check if we are within 10% of correct speed
-            //LED.setPattern('R');
+        if (velocity < (desiredSpeed-5) || velocity > (desiredSpeed+5)){ // check if we are within 10% of correct speed
+            close = false;
+            LED.setPattern('R');
         }else{
-            //LED.setPattern('B');
+            close = true;
+            LED.setPattern('B');
         }
 
         avgSpeed += velocity/2;

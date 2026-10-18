@@ -49,23 +49,20 @@ public class Driver_Controller {
     for(int i = 0; i < 3; ++i){
         m_tempController = new XboxController(i);
         if (m_tempController.getRawButton(14) == true){
-            System.out.println("driver");
             m_Controller0 = new CommandXboxController(i);
             m_Controller1 = new Joystick(i);
         }
         else if (m_tempController.getRawButton(13) == true){
-            System.out.println("m3");
             m_Controller3 = m_tempController;
         }
         else{
-            System.out.println("m2");
             m_Controller2 = m_tempController;
         }
     }
 }
 
 public static Boolean buttonAutoOrient(){
-    return m_Controller1.getRawButton(2);}
+    return m_Controller1.getRawButton(1);}
 public static Boolean buttonVisionToggle(){
     return m_Controller1.getRawButton(6);}
 
@@ -144,7 +141,6 @@ public  double joystick_curve(double joy) {
 }
 public double[] betterJoystickCurve(double x, double y) {
     double radius = Math.sqrt((x*x)+(y*y));
-    System.out.println(radius);
     double angle = Math.atan2(y, x);
     radius = joystick_curve(radius);
     double[] returnValue = {Math.sin(angle)*radius, Math.cos(angle)*radius};
@@ -169,8 +165,8 @@ public static void SwerveInputPeriodic(){
     }
     else{ //Controller Mode
         Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
-        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[0]*sliderMult;
-        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()+0.04, m_Controller0.getLeftY()-0.07)[1]*sliderMult;
+        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()-0.02, m_Controller0.getLeftY()-0.05)[0]*sliderMult;
+        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()-0.02, m_Controller0.getLeftY()-0.05)[1]*sliderMult;
         SwerveEncoderPassthrough = Math.toDegrees(Math.atan2(SwerveXPassthrough, SwerveYPassthrough));
     }
 }

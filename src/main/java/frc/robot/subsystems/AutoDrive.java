@@ -112,14 +112,14 @@ public class AutoDrive{
         for (int i = 0; i < step; ++i){
             Double srcScalingPow = startScaling[i];//*startScaling[i];
             Double endScalingPow = endScaling[i];//*endScaling[i];
-            Xpos.add(i, startX+destXpoints[i]+(srcXpoints[i]*srcScalingPow+endXpoints[i]*endScalingPow)*(maxDist*50/speed));
-            Ypos.add(i, startY+destYpoints[i]+(srcYpoints[i]*srcScalingPow+endYpoints[i]*endScalingPow)*(maxDist*50/speed));
+            Xpos.add(i, startX+destXpoints[i]+(srcXpoints[i]*srcScalingPow-endXpoints[i]*endScalingPow)*(maxDist*50/speed));
+            Ypos.add(i, startY+destYpoints[i]+(srcYpoints[i]*srcScalingPow-endYpoints[i]*endScalingPow)*(maxDist*50/speed));
         }
         Xpos.add(step, destX+startX);
         Ypos.add(step, destY+startY);
-        for (int i = 0; i <= step; ++i){
-            //System.out.printf("x = %.3f, y = %.3f\n", Xpos.get(i), Ypos.get(i));
-        }
+        // for (int i = 0; i <= step; ++i){
+        //     //System.out.printf("x = %.3f, y = %.3f\n", Xpos.get(i), Ypos.get(i));
+        // }
         maxDist /= speed;
         validSpline = true;
     }
@@ -145,7 +145,8 @@ public class AutoDrive{
         Double idealX = ((b1-b2)/(m2-m1));
         Double dist = Math.sqrt(Math.pow(x-idealX, 2)+Math.pow((idealX-x)*m2, 2));
         
-        Double driveAngle = Math.atan2(Ypos.get(progress+1)-Ypos.get(progress)+(correctionMult*Math.sin(Math.atan(m2))*dist/(totalPoints-1)), Xpos.get(progress+1)-Xpos.get(progress)+(correctionMult*Math.cos(Math.atan(m2))*dist/(totalPoints-1)));
+        Double driveAngle = Math.atan2(Ypos.get(progress+1)-Ypos.get(progress)+(correctionMult*Math.sin(Math.atan(m2))*dist/(totalPoints-1)), 
+            Xpos.get(progress+1)-Xpos.get(progress)+(correctionMult*Math.cos(Math.atan(m2))*dist/(totalPoints-1)));
         //adjust speed based on the slider
         speed *= sliderAdjust;
         speed *= pointsDist/maxDist;
@@ -157,8 +158,8 @@ public class AutoDrive{
         speed *= ((alliance == 'R')?1:-1); // opposite directions if red vs blue
         dist = Math.sqrt(Math.pow(x-odox, 2)+Math.pow((odoy-x), 2));
         if (progress < totalPoints - 2 || ((Math.sqrt(Math.pow(odox-Xpos.get(totalPoints-1), 2)+Math.pow(odoy-Ypos.get(totalPoints-1), 2)) > maxError) && dist < pointsDist) ){
-            Driver_Controller.SwerveCommandXValue = -speed*Math.cos(driveAngle);
-            Driver_Controller.SwerveCommandYValue = -speed*Math.sin(driveAngle);
+            Driver_Controller.SwerveCommandXValue = speed*Math.cos(driveAngle);
+            Driver_Controller.SwerveCommandYValue = speed*Math.sin(driveAngle);
             if (specifiedAngle < -99998){
                 specifiedAngle = Math.toDegrees(driveAngle);
                 

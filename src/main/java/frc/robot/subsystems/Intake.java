@@ -20,12 +20,12 @@ public class Intake {
     
     // method to apply current limit for the linkage motors
     public static final double maxCurrent = 3.0;// set the current limit to 2 and the stator limit to double that
-    public static void configureCurrentLimit(){
+    public static void configureCurrentLimit(double current){
         for (TalonFX item: motorList){// do the same thing for the 2 motors
             TalonFXConfigurator configurator = item.getConfigurator();
             CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
 
-            limitConfigs.SupplyCurrentLimit = maxCurrent;
+            limitConfigs.SupplyCurrentLimit = current;
             limitConfigs.SupplyCurrentLimitEnable = true;
             //limitConfigs.StatorCurrentLimit = maxCurrent*2;
             limitConfigs.StatorCurrentLimitEnable = false;
@@ -40,11 +40,14 @@ public class Intake {
     public static Double farPower = 0.2, smallPower = 0.1;
     public static Double[] linkagePow = {0.0, 0.0};
     public static int[] highCurrentNum = {0, 0};
-    public static int highCurrentThreshold = 4;
+    public static int highCurrentThreshold = 20;
     public static Double[] resetLinkageEncoders(){
         if (needReset){
             resetL = false;
             resetR = false;
+            configureCurrentLimit(1);
+            highCurrentNum[0] = 0;
+            highCurrentNum[1] = 0;
         }
         int[] nums = new int[] {0, 1};
         for (int i : nums){ // do the same thing for the 2 motors & sensors
@@ -56,7 +59,7 @@ public class Intake {
             TalonFX curMotor = motorList[i];
             DigitalInput curSensor = sensorList[i];
 
-            if (curMotor.getSupplyCurrent().getValueAsDouble() > maxCurrent*0.8){
+            if (Math.abs(curMotor.getVelocity().getValueAsDouble()) < 1){
                 highCurrentNum[i] = Math.min(highCurrentThreshold, highCurrentNum[i]+1);
             }else{
                 highCurrentNum[i] = Math.max(0, highCurrentNum[i]-1);
@@ -67,6 +70,15 @@ public class Intake {
                 curMotor.setPosition(0.0);
                 if (i == 0) resetL = true;
                 else resetR = true;
+
+                TalonFXConfigurator configurator = curMotor.getConfigurator();
+                CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
+
+                limitConfigs.SupplyCurrentLimit = maxCurrent;
+                limitConfigs.SupplyCurrentLimitEnable = true;
+                limitConfigs.StatorCurrentLimitEnable = false;
+
+                configurator.apply(limitConfigs);
             }else
                 linkagePow[i] = -farPower;
 
@@ -118,7 +130,7 @@ public class Intake {
                 break;
             case "neutral":case "Neutral":
             default:
-                posNum = 15.0;
+                posNum = 18.5;
                 break;
         }
         Double[] newPow = {0.0, 0.0};

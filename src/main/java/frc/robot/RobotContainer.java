@@ -40,7 +40,7 @@ public class RobotContainer {
     public static double TurnModifier = 0.2;
     private static double rotaryOffset = 0;
     /* Setting up bindings for necessary control of the swerve drive platform */
-    public static Double deadbandV = MaxSpeed * 0.1/5, angDeadband = MaxAngularRate * 0.1;
+    public static Double deadbandV = MaxSpeed * 0.1/5, angDeadband = MaxAngularRate * 0.1*0.4;
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(deadbandV).withRotationalDeadband(angDeadband) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
@@ -48,11 +48,73 @@ public class RobotContainer {
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
+    public static final SendableChooser<String> autoChooser = new SendableChooser<>();
+    public static final SendableChooser<String> secondAutoChooser = new SendableChooser<>();
+    public static final SendableChooser<String> lastPositionChooser = new SendableChooser<>();
+    public static final SendableChooser<Boolean> shootFastSelector = new SendableChooser<>();
+    public static final SendableChooser<Integer> waitCounter = new SendableChooser<>();
+    public static final SendableChooser<Double> speedChooser = new SendableChooser<>();
+    public static final SendableChooser<Double> shootTimer = new SendableChooser<>();
+    public static final SendableChooser<Integer> shootPositionChooser = new SendableChooser<>();
+
 
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();    
 
     public RobotContainer() {
+        autoChooser.addOption("Full pass", "full");
+        autoChooser.setDefaultOption("Half/one side", "half");
+        autoChooser.addOption("Depot", "depot");
+        autoChooser.addOption("Backup, shoot", "no intake");
 
+        secondAutoChooser.addOption("no second pass", "none");
+        secondAutoChooser.setDefaultOption("close half pass", "half");
+        secondAutoChooser.addOption("close full pass", "full");
+
+        lastPositionChooser.addOption("stay after scoring", "none");
+        lastPositionChooser.setDefaultOption("move to bump", "bump");
+        lastPositionChooser.addOption("to neutral", "neutral");
+        
+        waitCounter.setDefaultOption("start immediately", 0);
+        waitCounter.addOption("wait 1 sec", 50);
+        waitCounter.addOption("2 seconds", 100);
+        waitCounter.addOption("3 seconds", 150);
+        waitCounter.addOption("4 seconds", 200);
+        waitCounter.addOption("5 seconds", 250);
+        waitCounter.addOption("6 seconds", 300);
+        waitCounter.addOption("6.7", 335);
+        waitCounter.addOption("7 seconds", 350);
+        waitCounter.addOption("8 seconds", 400);
+        waitCounter.addOption("9 seconds", 450);
+        waitCounter.addOption("10 seconds", 500);
+
+        speedChooser.addOption("speed of 1", 1.0);
+        speedChooser.addOption("2", 2.0);
+        speedChooser.addOption("3", 3.0);
+        speedChooser.setDefaultOption("4 (default)", 4.0);
+        speedChooser.addOption("5", 5.0);
+        speedChooser.addOption("6", 6.0);
+        speedChooser.addOption("7", 7.0);
+
+        shootTimer.addOption("shoot for 3 seconds", 3.0);
+        shootTimer.setDefaultOption("4 seconds", 4.0);
+        shootTimer.addOption("5 seconds", 5.0);
+        shootTimer.addOption("6 seconds", 6.0);
+
+        shootFastSelector.addOption("keep shooters fast", true);
+        shootFastSelector.setDefaultOption("spin up as needed", false);
+
+        shootPositionChooser.setDefaultOption("shoot from corner", 0);
+        shootPositionChooser.addOption("close diagonal", 1);
+        shootPositionChooser.addOption("middle", 2);
+
+        SmartDashboard.putData("Second Pass", secondAutoChooser);
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+        SmartDashboard.putData("Last Pos Chooser", lastPositionChooser);
+        SmartDashboard.putData("wait time?", waitCounter);
+        SmartDashboard.putData("Shoot first?", shootFastSelector);
+        SmartDashboard.putData("Speed", speedChooser);
+        SmartDashboard.putData("position", shootPositionChooser);
+        SmartDashboard.putData("shooting time", shootTimer);
         configureBindings();
         
     }

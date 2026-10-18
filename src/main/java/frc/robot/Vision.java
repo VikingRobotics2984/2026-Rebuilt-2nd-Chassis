@@ -46,7 +46,7 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class Vision {
-    public static Boolean useVisionButton = false;
+    public static Boolean useVisionButton = true;
     public PhotonCamera camera, camera2;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
@@ -92,7 +92,7 @@ public class Vision {
     }
 
     public void periodic() {
-        if (useVisionButton && false){
+        if (useVisionButton && (!Driver_Controller.buttonVisionToggle())){
             seenTags = false;
             return;
         }

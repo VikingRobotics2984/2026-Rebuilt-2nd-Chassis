@@ -4,8 +4,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.wpilibj.DriverStation;
 
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
 
 public class Transport {
     public static TalonSRX horizontalTransportMotor = new TalonSRX(Constants.horizontalTransportMotorID);
@@ -16,7 +18,7 @@ public class Transport {
         lowerVerticalPower = 0.0,
         upperVerticalPower = 0.0;
 
-    public static final int horizontalMaxCurrent = 7;// current max for horizontal motor
+    public static final int horizontalMaxCurrent = 10;// current max for horizontal motor
     public static final int upperVerticalMaxCurrent = 11;// current max for upper vertical motor
     public static final int lowerVerticalMaxCurrent = 18;// current max for lower vertical motor
     // configure the current limits for the motor
@@ -46,8 +48,11 @@ public class Transport {
             horizontalPower = -(powerArray[kitchenStovePos]+0.2);
             lowerVerticalPower = -(powerArray[kitchenStovePos]+0.1);
             upperVerticalPower = -powerArray[kitchenStovePos];
-        }else if (Driver_Controller.buttonTransport()){
-            horizontalPower = powerArray[kitchenStovePos];
+        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close && 
+            ((Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 5)
+            || (!Driver_Controller.SwerveCommandControl))){
+                
+            horizontalPower = powerArray[kitchenStovePos]+0.2;
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
             if (Driver_Controller.buttonPreloadTransport()){
@@ -56,9 +61,9 @@ public class Transport {
                 upperVerticalPower /= 2;
             }
         }else {
-            if (Driver_Controller.switchIntakeRoller()){
-                horizontalPower = powerArray[kitchenStovePos];
-            }else{
+            if (System.nanoTime()%(2500*1000*1000) < (750*1000*1000) && Driver_Controller.switchIntakeRoller()){
+                horizontalPower = powerArray[kitchenStovePos]+0.2;
+            } else {
                 horizontalPower = 0.0;
             }
             lowerVerticalPower = 0.0;
