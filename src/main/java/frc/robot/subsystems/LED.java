@@ -19,7 +19,7 @@ public class LED {
         }
     }
     public static char curPattern = '0';
-    public static char curRange = '0';
+    public static char curDistance = '0';
 
     public static void setPattern(char newPattern){
         if (newPattern >= 'A' && newPattern <= 'Z'){ // if is a capital letter
@@ -41,19 +41,31 @@ public class LED {
         }
     }
 
+    public static void setDistance(char newDistance){
+        if (newDistance >= 'A' && newDistance <= 'Z'){ // if is a capital letter
+            newDistance += 'a'-'A'; // change to lowercase
+        }
+        if (newDistance >= 'a' && newDistance <= 'z'){ // if is a latter
+            if (newDistance == curDistance){ // don't send the same pattern multiple times
+                return;
+            }
+            curDistance = newDistance;
+            if (printPattern){
+                System.out.println(newDistance);
+            }
+            try{
+                arduino.writeString(""+newDistance);
+            }catch(Exception e){
+                System.out.println("UH OH leds failed");
+            }
+        }
+    }
+
     public static void setPattern(String newPattern){
         switch(newPattern){
             case "rainbow":
             case "Rainbow":
                 setPattern('w'); // rainbow pattern
-                break;
-            case "blue":
-            case "Blue":
-                setPattern('b'); // solid blue
-                break;
-            case "red":
-            case "Red":
-                setPattern('r'); // solid red
                 break;
             case "Error":
             case "error":

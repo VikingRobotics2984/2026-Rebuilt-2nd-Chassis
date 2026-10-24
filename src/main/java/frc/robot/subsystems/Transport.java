@@ -55,27 +55,29 @@ public class Transport {
 
     
     public static void transportPower(){
-        int kitchenStovePos = Math.max(0, Driver_Controller.kitchenStove()-7);
+        int kitchenStovePos = Math.max(0, Driver_Controller.kitchenStove()-7)*0+4;
         
         if (Driver_Controller.buttonReverseShooter() || Driver_Controller.buttonReverseTransport()){
             horizontalPower = -(powerArray[kitchenStovePos]+0.2);
             lowerVerticalPower = -(powerArray[kitchenStovePos]+0.1);
             upperVerticalPower = -powerArray[kitchenStovePos];
-        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close){
+        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close && (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)){
             horizontalPower = powerArray[kitchenStovePos]+0.2;
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
         }else if (Driver_Controller.buttonPreloadTransport()){
-                horizontalPower /= 0.5;
-                lowerVerticalPower /= 0.5;
-                upperVerticalPower /= 0.5;
+                horizontalPower = 0.5;
+                lowerVerticalPower = 0.5;
+                upperVerticalPower = 0.5;
         }else {
             if (System.nanoTime()%(2500*1000*1000) < (750*1000*1000) && Driver_Controller.switchIntakeRoller()){
                 horizontalPower = powerArray[kitchenStovePos]+0.2;
+                lowerVerticalPower = (powerArray[kitchenStovePos]+0.1)*0;
             } else {
                 horizontalPower = 0.0;
+                lowerVerticalPower = 0.0;
             }
-            lowerVerticalPower = 0.0;
+            
             upperVerticalPower = 0.0;
         }
     }

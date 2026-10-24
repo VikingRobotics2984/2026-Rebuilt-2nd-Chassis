@@ -32,6 +32,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.subsystems.Driver_Controller;
 
@@ -92,7 +93,7 @@ public class Vision {
     }
 
     public void periodic() {
-        if (useVisionButton && ((!Driver_Controller.buttonVisionToggle()) || Driver_Controller.buttonAutoOrient())){
+        if (DriverStation.isTeleopEnabled() && useVisionButton && ((!Driver_Controller.buttonVisionToggle()) || Driver_Controller.buttonAutoOrient())){
             seenTags = false;
             return;
         }

@@ -3,6 +3,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.subsystems.AutoDrive;
 import frc.robot.subsystems.Driver_Controller;
+import frc.robot.subsystems.Intake;
 
 public class Autonomous {
     public static int autoState = 0, autoRampState = 0; // progress index shared between autos
@@ -60,19 +61,19 @@ public class Autonomous {
 
                 if (alliance == 'B'){ // same thing but for the first x position
                     if (odoX < hubX) { // check if we are entering or exiting alliance zone; first destination isn't the middle of bump
-                        destX1 = hubX-(bumpWidth/2+0.5);
-                        destX2 = hubX+(bumpWidth/2+0.5);
+                        destX1 = hubX-(bumpWidth/2+.5);
+                        destX2 = hubX+(bumpWidth/2+1);
                     }else{
-                        destX1 = hubX+(bumpWidth/2+0.5);
-                        destX2 = hubX-(bumpWidth/2+0.5);
+                        destX1 = hubX+(bumpWidth/2+.5);
+                        destX2 = hubX-(bumpWidth/2+1);
                     }
                 }else{
                     if (odoX < (centerX*2-hubX)) { // same but flip
-                        destX1 = centerX*2-hubX-(bumpWidth/2+0.5);
-                        destX2 = centerX*2-hubX+(bumpWidth/2+0.5);
+                        destX1 = centerX*2-hubX-(bumpWidth/2+.5);
+                        destX2 = centerX*2-hubX+(bumpWidth/2+1);
                     }else{
-                        destX1 = centerX*2-hubX+(bumpWidth/2+0.5);
-                        destX2 = centerX*2-hubX-(bumpWidth/2+0.5);
+                        destX1 = centerX*2-hubX+(bumpWidth/2+.5);
+                        destX2 = centerX*2-hubX-(bumpWidth/2+1);
                     }
                 }
                 targetAngle = orientBump();
@@ -84,7 +85,7 @@ public class Autonomous {
                     return false;
                 } 
 
-                if (Math.abs(odoX-destX1) < 0.2){
+                if (Math.abs(odoY-destY) < 0.2){
                     autoRampState = 3; // if we are in the correct place to immediately go over the bump, skip state 1
                     AutoDrive.setSpline(destX2, destY, (destX2-destX1)*speed*endVeloMult/2, 0.0, speed, 50);
                 }else{
@@ -116,29 +117,30 @@ public class Autonomous {
                 ++autoState;
             case 1:
                 if (autoRamp()){
+                    Intake.needReset = true;
                     Double xPos, yPos, xVelo;
                     if (alliance == 'B'){
                         xPos = centerX-1;
                         xVelo = 2.0*endVeloMult;
                         if (odoY < centerY){
                             yPos = centerY-2.75;
-                            driveAngle = 75.0;
+                            driveAngle = 90.0;
                         }else{
                             yPos = centerY+2.75;
-                            driveAngle = -75.0;
+                            driveAngle = -90.0;
                         }
                     }else{
                         xPos = centerX+1;
                         xVelo = -2.0*endVeloMult;
                         if (odoY < centerY){
                             yPos = centerY-2.75;
-                            driveAngle = 105.0;
+                            driveAngle = 90.0;
                         }else{
                             yPos = centerY+2.75;
-                            driveAngle = -105.0;
+                            driveAngle = -90.0;
                         }
                     }
-                    AutoDrive.setSpline(xPos, yPos, xVelo*Math.max(1.5, speed), 0.0, speed, 50);
+                    AutoDrive.setSpline(xPos, yPos, xVelo*Math.min(1.5, speed)*endVeloMult, 0.0, speed, 50);
                     autoState++;
                 }
                 break;
@@ -147,9 +149,9 @@ public class Autonomous {
                 if (AutoDrive.driveSpline(driveAngle)){
                     Double xPos, yPos = centerY;
                     if (alliance == 'B'){
-                        xPos = centerX-1;
+                        xPos = centerX-0.3;
                     }else{
-                        xPos = centerX+1;
+                        xPos = centerX+0.3;
                     }
                     if (odoY < centerY){
                         yPos += 1;
@@ -157,7 +159,7 @@ public class Autonomous {
                         yPos -= 1;
                     }
                     autoRampState = 0;
-                    AutoDrive.setSpline(xPos, yPos, 0.0, (centerY-odoY)*endVeloMult, Math.max(1.5, speed), 50);
+                    AutoDrive.setSpline(xPos, yPos, 0.0, (centerY-odoY)*endVeloMult*Math.min(1.5, speed), Math.min(1.5, speed), 50);
                     autoState++;
                 }
                 break;
@@ -186,29 +188,30 @@ public class Autonomous {
                 ++autoState;
             case 1:
                 if (autoRamp()){
+                    Intake.needReset = true;
                     Double xPos, yPos, xVelo;
                     if (alliance == 'B'){
                         xPos = centerX-1;
                         xVelo = 2.0*endVeloMult;
                         if (odoY < centerY){
                             yPos = centerY-2.75;
-                            driveAngle = 75.0;
+                            driveAngle = 90.0;
                         }else{
                             yPos = centerY+2.75;
-                            driveAngle = -75.0;
+                            driveAngle = -90.0;
                         }
                     }else{
                         xPos = centerX+1;
                         xVelo = -2.0*endVeloMult;
                         if (odoY < centerY){
                             yPos = centerY-2.75;
-                            driveAngle = 105.0;
+                            driveAngle = 90.0;
                         }else{
                             yPos = centerY+2.75;
-                            driveAngle = -105.0;
+                            driveAngle = -90.0;
                         }
                     }
-                    AutoDrive.setSpline(xPos, yPos, xVelo*Math.max(1.5, speed), 0.0, speed, 50);
+                    AutoDrive.setSpline(xPos, yPos, (centerY-odoY)*endVeloMult*Math.min(1.5, speed), 0.0, speed, 50);
                     autoState++;
                 }
                 break;
@@ -217,9 +220,9 @@ public class Autonomous {
                 if (AutoDrive.driveSpline(driveAngle)){
                     Double xPos, yPos = centerY;
                     if (alliance == 'B'){
-                        xPos = centerX-0.3;
+                        xPos = centerX-0.2;
                     }else{
-                        xPos = centerX+0.3;
+                        xPos = centerX+0.2;
                     }
                     if (odoY < centerY){
                         yPos -= 0.4;
@@ -227,18 +230,19 @@ public class Autonomous {
                         yPos += 0.4;
                     }
                     autoRampState = 0;
-                    AutoDrive.setSpline(xPos, yPos, (xPos-centerX)*endVeloMult, 0.0, Math.max(1.5, speed), 50);
+                    AutoDrive.setSpline(xPos, yPos, 0.0, (xPos-centerX)*endVeloMult*Math.min(1.5, speed), Math.min(1.5, speed), 50);
                     autoState++;
                 }
                 break;
             case 3:
+            case 4:
                 Robot.rollerPow = -1.0;
                 if (AutoDrive.driveSpline(driveAngle)){
                     autoRampState = 0;
                     autoState++;
                 }
                 break;
-            case 4:
+            case 5:
                 Robot.rollerPow = -1.0;
                 Robot.spinShooters = true;
                 return autoRamp();

@@ -19,8 +19,8 @@ public class Shooter {
     public static Double avgSpeed = 0.0;
 
     public static final Double[]
-        interpolationDists = {-99999.9, 2.374,  2.894,  3.440,  3.711,  4.391,  4.903,  5.385,    99999.9},
-        interpolationSpeeds = {50.1,    50.1,   54.1,   56.2,   59.7,   64.1,   66.6,   71.2,     71.2};
+        interpolationDists = {-99999.9, 1.8,    2.894,  3.440,  3.711,  4.391,  4.903,  5.385,    99999.9},
+        interpolationSpeeds = {50.1,    50.1,   55.1,   57.2,   60.7,   65.1,   67.6,   72.2,     72.2};
     public static Double dist = 0.0;
     public static Double interpolatePower(){
         Double posX = RobotContainer.drivetrain.getState().Pose.getX();
@@ -65,12 +65,10 @@ public class Shooter {
         curPower += i;
         d = accel*(-0.005);
 
-        if (velocity < (desiredSpeed-10) || velocity > (desiredSpeed+10)){ // check if we are within 10% of correct speed
+        if (velocity < (desiredSpeed-5) || velocity > (desiredSpeed+5)){ // check if we are within 10% of correct speed
             close = false;
-            LED.setPattern('R');
         }else{
             close = true;
-            LED.setPattern('B');
         }
 
         avgSpeed += velocity/2;

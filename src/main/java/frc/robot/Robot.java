@@ -34,7 +34,7 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void robotInit() {
-    Intake.configureCurrentLimit(Intake.maxCurrent);
+    Intake.configureCurrentLimit(new double[]{Intake.maxCurrent, Intake.maxCurrent});
     Transport.configureCurrentLimit();
     Constants.Vision.readLayout();
     LED.assignPort();
@@ -45,12 +45,13 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     alliance = DriverStation.getAlliance().toString().charAt(9);
+    AutoDrive.alliance = DriverStation.getAlliance().toString().charAt(9);
     Driver_Controller.SwerveInputPeriodic();
     CommandScheduler.getInstance().run(); 
     vision.periodic();
     vision2.periodic();
     if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
-      //System.out.println(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees());
+      //System.out.println(Driver_Controller.buttonVisionToggle());
     }
   }
 
@@ -59,6 +60,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
+    LED.setDistance('n');
     if ((vision.camera.isConnected() && vision2.camera.isConnected()) == false){
       LED.setPattern('e'); // don't have cameras
     }else if (vision.seenTags || vision2.seenTags){
@@ -146,13 +148,22 @@ public class Robot extends TimedRobot {
       case 2: // go to the correct shooting position
         if (AutoDrive.driveSpline(true)){
           autoState++;
-          waitCnt = shootingTime; // set the timer according to SmartDashboard
+          waitCnt = 25;//shootingTime; // set the timer according to SmartDashboard
         }
         orienting = true;
         spinShooters = true;
         break;
 
-      case 3: // shoot until our scoring timer runs out
+      case 3:
+        RobotContainer.stopMovement();
+        if (--waitCnt < 0){// waitCnt was chosen by smartDashboard
+          autoState++;
+          waitCnt = shootingTime;
+        }
+        orienting = true;
+        spinShooters = true;
+        break;
+      case 4: // shoot until our scoring timer runs out
         RobotContainer.stopMovement();
         hopperState = "retract";
         if (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 7) rollerPow = -1.0;// run the motor unless mostly retracted
@@ -163,7 +174,7 @@ public class Robot extends TimedRobot {
         }
         break;
 
-      case 4: // second pass or skip it
+      case 5: // second pass or skip it
         switch(secondPass){
           case "none": // if we are staying, then skip to the end positioning state
             autoState = 7;
@@ -187,7 +198,7 @@ public class Robot extends TimedRobot {
         }
         break;
 
-      case 5: // go to our shooting position
+      case 6: // go to our shooting position
         if (AutoDrive.driveSpline(true)){
           autoState++;
           waitCnt = shootingTime; // set the timer according to SmartDashboard
@@ -196,7 +207,7 @@ public class Robot extends TimedRobot {
         spinShooters = true;
         break;
 
-      case 6: // shoot our hopper
+      case 7: // shoot our hopper
         RobotContainer.stopMovement();
         hopperState = "retract";
         if (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 7) rollerPow = -1.0;
@@ -207,7 +218,7 @@ public class Robot extends TimedRobot {
         }
         break;
 
-      case 7: // go to ending position
+      case 8: // go to ending position
         switch(endPos) {
           case "none":
             RobotContainer.stopMovement();
@@ -333,11 +344,35 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    Driver_Controller.reverseTiming();
     Double[] linkagePow = {0.0, 0.0};
     Double rollerPow = 0.0;
     Double shooterSpeed = Shooter.interpolatePower();
     if (Driver_Controller.buttonUseOffset()) shooterSpeed += 5*(Driver_Controller.lowerDriverSlider());
     Double shooterPow = 0.0;
+
+    Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
+    Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
+
+    Boolean inAllianceZone = (alliance == 'B' && odoX < Autonomous.hubX);
+    inAllianceZone |= (alliance == 'R' && odoX > (Autonomous.centerX*2-Autonomous.hubX));
+
+    if (inAllianceZone){
+      Double ourHubX = (alliance == 'B')?
+        Autonomous.hubX:
+        (Autonomous.centerX*2-Autonomous.hubX);
+      Double dist = Math.sqrt(
+        Math.pow(ourHubX-odoX, 2)+
+        Math.pow(Autonomous.centerY-odoY, 2)
+      );
+      if (dist < Shooter.interpolationDists[1]){ // if we are below the minimum distance for shooting in interpolatation distances
+        LED.setDistance('r'); // too close
+      }else{
+        LED.setDistance('g');
+      }
+    }else{
+      LED.setDistance('n');
+    }
 
     if (Driver_Controller.shooterSwitch()){
       shooterPow = Shooter.speedController(shooterSpeed);
@@ -384,15 +419,13 @@ public class Robot extends TimedRobot {
       RobotContainer.stopMovement();
       shooterPow = 0.0;
     }else{
-      if (Driver_Controller.buttonBumpOrient()){
+      /*if (Driver_Controller.buttonBumpOrient()){
         Driver_Controller.SwerveControlSet(true);
         Driver_Controller.SwerveCommandEncoderValue = Autonomous.orientBump();
         Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
         Driver_Controller.SwerveCommandXValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[0]*sliderMult;
         Driver_Controller.SwerveCommandYValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[1]*sliderMult;
-      }else if (Driver_Controller.buttonAutoOrient()){
-        Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
-        Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
+      }else */if (Driver_Controller.buttonAutoOrient()){
         Driver_Controller.SwerveControlSet(true);
         if (((alliance == 'B') && (odoX < Autonomous.hubX)) || ((alliance == 'R') && (odoX > Autonomous.centerX*2-Autonomous.hubX))){
           Double hubX = (alliance == 'B')?Autonomous.hubX:(Autonomous.centerX*2-Autonomous.hubX);
@@ -405,8 +438,8 @@ public class Robot extends TimedRobot {
         }
         
         Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
-        Driver_Controller.SwerveCommandXValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[0]*sliderMult;
-        Driver_Controller.SwerveCommandYValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX()-0.02, Driver_Controller.m_Controller0.getLeftY()-0.05)[1]*sliderMult;
+        Driver_Controller.SwerveCommandXValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX(), Driver_Controller.m_Controller0.getLeftY())[0]*sliderMult;
+        Driver_Controller.SwerveCommandYValue = -RobotContainer.betterJoystickCurve(Driver_Controller.m_Controller0.getLeftX(), Driver_Controller.m_Controller0.getLeftY())[1]*sliderMult;
       }else{
         Driver_Controller.SwerveControlSet(false);
       }
@@ -420,13 +453,12 @@ public class Robot extends TimedRobot {
     Shooter.leftShooter.set(shooterPow);
     Shooter.rightShooter.set(shooterPow);
     if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
-      System.out.println(shooterSpeed);
-      System.out.println(Shooter.dist);
-      System.out.println(Math.abs(Shooter.rightShooter.getVelocity().getValueAsDouble())-shooterSpeed);
-      System.out.println();
+      // System.out.println(shooterSpeed);
+      // System.out.println(Shooter.dist);
+      // System.out.println(Math.abs(Shooter.rightShooter.getVelocity().getValueAsDouble())-shooterSpeed);
+      // System.out.println();
     }
-    // if (Driver_Controller.m_Controller2.getRawButton(1))Intake.leftLinkageMotor.set(0.2); else
-    // if (Driver_Controller.m_Controller2.getRawButton(2))Intake.leftLinkageMotor.set(-0.2); else Intake.leftLinkageMotor.set(0.0);
+    Driver_Controller.autoShootLastPressed = Driver_Controller.buttonIntakeIn();
   }
 
   @Override

@@ -89,6 +89,7 @@ public class RobotContainer {
 
         speedChooser.addOption("speed of 1", 1.0);
         speedChooser.addOption("2", 2.0);
+        speedChooser.addOption("2.5", 2.5);
         speedChooser.addOption("3", 3.0);
         speedChooser.setDefaultOption("4 (default)", 4.0);
         speedChooser.addOption("5", 5.0);

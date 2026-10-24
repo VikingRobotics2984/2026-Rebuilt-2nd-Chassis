@@ -158,8 +158,8 @@ public class AutoDrive{
         speed *= ((alliance == 'R')?1:-1); // opposite directions if red vs blue
         dist = Math.sqrt(Math.pow(x-odox, 2)+Math.pow((odoy-x), 2));
         if (progress < totalPoints - 2 || ((Math.sqrt(Math.pow(odox-Xpos.get(totalPoints-1), 2)+Math.pow(odoy-Ypos.get(totalPoints-1), 2)) > maxError) && dist < pointsDist) ){
-            Driver_Controller.SwerveCommandXValue = speed*Math.cos(driveAngle);
-            Driver_Controller.SwerveCommandYValue = speed*Math.sin(driveAngle);
+            Driver_Controller.SwerveCommandXValue = -((alliance == 'B')?1:(1))*speed*Math.cos(driveAngle);
+            Driver_Controller.SwerveCommandYValue = -((alliance == 'B')?1:(1))*speed*Math.sin(driveAngle);
             if (specifiedAngle < -99998){
                 specifiedAngle = Math.toDegrees(driveAngle);
                 

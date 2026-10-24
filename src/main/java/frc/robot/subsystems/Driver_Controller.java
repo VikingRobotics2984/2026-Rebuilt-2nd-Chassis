@@ -67,8 +67,6 @@ public static Boolean buttonVisionToggle(){
     return m_Controller1.getRawButton(6);}
 public static Boolean buttonUseOffset(){
     return m_Controller1.getRawButton(5);}
-public static Boolean buttonBumpOrient(){
-    return m_Controller1.getRawButton(2);}
 
 public static Double upperDriverSlider(){
     return m_Controller1.getRawAxis(3);}
@@ -84,7 +82,7 @@ public static Double offsetSlider(){
     return 29.84*m_Controller3.getRawAxis(1);}
 
 public static Boolean buttonEBrake(){
-    return (m_Controller2.getRawButton(1) || m_Controller1.getRawButton(3));
+    return (m_Controller3.getRawButton(1));
 }
 
 public static Boolean buttonPreloadTransport(){
@@ -92,27 +90,38 @@ public static Boolean buttonPreloadTransport(){
 public static Boolean buttonTransport(){
     return m_Controller2.getRawButton(4) || autoShoot();}
 public static Boolean buttonReverseTransport(){
-    return m_Controller3.getRawButton(6);}
+    return m_Controller3.getRawButton(6) || m_Controller1.getRawButton(4) || (curTime != 0 && curTime < maxTime);}
 public static Boolean buttonReverseShooter(){
     return m_Controller3.getRawButton(8);}
+
+public static int curTime = 0, maxTime = 25; // reverse for 1/2 sec after turning on transport
+public static void reverseTiming(){
+    if (buttonTransport()) ++curTime;
+    else curTime = 0;
+}
 
 public static Boolean shooterSwitch(){
     return m_Controller3.getRawButton(9) || autoShoot();}
 public static Boolean autoShoot(){
-    return m_Controller3.getRawButton(12);}
+    return (m_Controller1.getRawButton(1) || m_Controller3.getRawButton(12));}
+public static Boolean autoShootLastPressed = false;
+public static Boolean needReset = false;
 public static Boolean buttonResetIntake(){
-    return m_Controller3.getRawButton(3);}
+    needReset |= (autoShootLastPressed && (!buttonIntakeIn()));
+    Boolean canReset = needReset && (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 15) && (Intake.rightLinkageMotor.getRotorPosition().getValueAsDouble() > 15);
+    if (canReset) needReset = false;
+    return canReset || m_Controller1.getRawButton(3) || m_Controller3.getRawButton(3);}
 public static Boolean buttonIntakeOut(){
     return m_Controller3.getRawButton(4);}
 public static Boolean buttonIntakeIn(){
-    return m_Controller3.getRawButton(5) || autoShoot();}
+    return m_Controller3.getRawButton(5) || (autoShoot() && ((System.nanoTime()%(2000*1000*1000)) < 1000*1000*1000)) || m_Controller1.getRawButton(2);}
 public static Boolean buttonReverseIntake(){
     return m_Controller3.getRawButton(7);}
 public static Boolean switchIntakeRoller(){
     return m_Controller3.getRawButton(10);}
 
 public static Boolean buttonBrake(){
-    return m_Controller1.getRawButton(1);
+    return false;//m_Controller1.getRawButton(1);
 }
 
 public static Boolean withinDeadBand(){
@@ -132,7 +141,7 @@ public static int kitchenStove(){
     return num;
 }
 
-final  double pos[] = {-1.0,-0.75,-0.5,-0.1 ,-0.03, 0,0.03, 0.1, 0.5, 0.75,1};
+final  double pos[] = {-1.0,-0.5,-0.3,-0.08 ,-0.03, 0,0.03, 0.08, 0.3, 0.5,1};
 final  double pwr[] = {-1  , -0.3,-0.1,-0.02,    0, 0,   0,0.02, 0.1,   .3,1};
 final double Speed = new RobotContainer().MaxSpeed;
 public  double joystick_curve(double joy) {
@@ -150,7 +159,7 @@ public  double joystick_curve(double joy) {
 public double[] betterJoystickCurve(double x, double y) {
     double radius = Math.sqrt((x*x)+(y*y));
     double angle = Math.atan2(y, x);
-    radius = joystick_curve(radius);
+    //radius = joystick_curve(radius);
     double[] returnValue = {Math.sin(angle)*radius, Math.cos(angle)*radius};
     return returnValue;
 }
@@ -173,8 +182,8 @@ public static void SwerveInputPeriodic(){
     }
     else{ //Controller Mode
         Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
-        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()-0.02, m_Controller0.getLeftY()-0.05)[0]*sliderMult;
-        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX()-0.02, m_Controller0.getLeftY()-0.05)[1]*sliderMult;
+        SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX(), m_Controller0.getLeftY())[0]*sliderMult;
+        SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX(), m_Controller0.getLeftY())[1]*sliderMult;
         SwerveEncoderPassthrough = Math.toDegrees(Math.atan2(SwerveXPassthrough, SwerveYPassthrough));
     }
 }
