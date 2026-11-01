@@ -17,23 +17,40 @@ public class Intake {
     public static DigitalInput positioningSensorL = new DigitalInput(8);//Constants.intakePositionSensorLPort);
     public static DigitalInput positioningSensorR = new DigitalInput(9);//Constants.intakePositionSensorRPort);
     static DigitalInput[] sensorList = new DigitalInput[] {positioningSensorL, positioningSensorR};
+
+    public static TalonFXConfigurator rightLinkageConfigurator = rightLinkageMotor.getConfigurator();
+    public static TalonFXConfigurator leftLinkageConfigurator = leftLinkageMotor.getConfigurator();
+    public static TalonFXConfigurator[] configuratorList = new TalonFXConfigurator[] {leftLinkageConfigurator, rightLinkageConfigurator};
+    public static TalonFXConfigurator intakeRollerConfigurator = intakeRollerMotor.getConfigurator();
+    public static CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
+
     
     // method to apply current limit for the linkage motors
     public static final double maxCurrent = 3.0;// set the current limit to 2 and the stator limit to double that
     public static void configureCurrentLimit(double[] current){
         int i = 0;
         for (TalonFX item: motorList){// do the same thing for the 2 motors
-            TalonFXConfigurator configurator = item.getConfigurator();
-            CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
-
             limitConfigs.SupplyCurrentLimit = current[i];
             limitConfigs.SupplyCurrentLimitEnable = true;
             //limitConfigs.StatorCurrentLimit = maxCurrent*2;
             limitConfigs.StatorCurrentLimitEnable = false;
 
-            configurator.apply(limitConfigs);
+            configuratorList[i].apply(limitConfigs);
             ++i;
         }
+    }
+
+    public static Boolean usingCurrentLimit = true;
+
+    public static void changeRollerLimit(boolean useLimit){
+        if (usingCurrentLimit == useLimit) return;
+        usingCurrentLimit = useLimit;
+
+        limitConfigs.SupplyCurrentLimit = 10;
+        limitConfigs.SupplyCurrentLimitEnable = useLimit;
+        limitConfigs.StatorCurrentLimitEnable = false;
+
+        intakeRollerConfigurator.apply(limitConfigs);
     }
 
     // method to reset the encoders for the powered bar pushers
@@ -47,7 +64,7 @@ public class Intake {
         if (needReset){
             resetLR[0] = false;
             resetLR[1] = false;
-            configureCurrentLimit(new double[] {1, 2});
+            configureCurrentLimit(new double[] {1.5, 1.5});
             highCurrentNum[0] = 0;
             highCurrentNum[1] = 0;
         }
@@ -61,63 +78,44 @@ public class Intake {
             //TalonFX curMotor = motorList[i];
             //DigitalInput curSensor = sensorList[i];
 
-            if (Math.abs(motorList[i].getSupplyCurrent().getValueAsDouble()) > (new double[] {1, 2})[i]){
+            if (Math.abs(motorList[i].getVelocity().getValueAsDouble()) <5){//(Math.abs(motorList[i].getSupplyCurrent().getValueAsDouble()) > 0.7*(new double[] {3, 3})[i]){
                 highCurrentNum[i] = Math.min(highCurrentThreshold, highCurrentNum[i]+1);
             }
-            System.out.println(highCurrentNum);
                 
             if (highCurrentNum[i] >= highCurrentThreshold) {
                 linkagePow[i] = 0.0;
-                motorList[i].setPosition(23.73+11.35);
+                motorList[i].setPosition((23.73+11.35)*1.125);
                 resetLR[i] = true;
-
-                TalonFXConfigurator configurator = motorList[i].getConfigurator();
-                CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
 
                 limitConfigs.SupplyCurrentLimit = maxCurrent;
                 limitConfigs.SupplyCurrentLimitEnable = true;
                 limitConfigs.StatorCurrentLimitEnable = false;
 
-                configurator.apply(limitConfigs);
+                configuratorList[i].apply(limitConfigs);
             }else
-                linkagePow[i] = farPower;//25.66  23.73+11.35
+                linkagePow[i] = farPower;
         }
         needReset = false;
         return linkagePow;
     }
-
+    
+    // *************************
     // method for moving the intake - extending, retracting, going to neutral
+    // only returns the calculated power - doesn't actually set motors
+    // *************************
     public static final Double maxSpeed = 0.3, // exactly what it looks like; max speed for moving the intake around
         deadZone = 0.5; // how far away in motor rotations it is from the correct position when it stops ~= 360*deadzone/(gear ratio n:1) degrees, currently about 4.5 each direction
-    public static Double[] moveIntakeTo(String position){
-
-        Double posNum; // convert the position from a string to a numerical value
-        switch(position){
-            case "in":case "In":
-            case "inside":case "Inside":
-            case "retract":case "Retract":
-            case "retracted":case "Retracted":
-                posNum = 2.0;
-                break;
-            case "out":case "Out":
-            case "outside":case "Outside":
-            case "extend":case "Extend":
-            case "extended":case "Extended":
-                posNum = 25.0;
-                break;
-            case "neutral":case "Neutral":
-            default:
-                posNum = 18.5;
-                break;
-        }
+    public static final Double retract = 2.0*1.125;
+    public static final Double extend = 25.0*1.125;
+    public static final Double neutral = 18.5*1.125;
+    public static Double[] moveIntakeTo(Double posNum){
         Double[] newPow = {0.0, 0.0};
         int[] nums = new int[] {0, 1};
         for (int i : nums){ // do the same thing for the 2 motors
-            TalonFX curMotor = motorList[i];
-            Double error = posNum-curMotor.getRotorPosition().getValueAsDouble();
+            Double error = posNum-motorList[i].getRotorPosition().getValueAsDouble();
             
             if (Math.abs(error) < deadZone){ // if in the deadzone, stop
-                curMotor.set(0.0);
+                motorList[i].set(0.0);
             }else{ // if not in the deadzone, power is proportional to error
                 if (error < 0){
                     newPow[i] = Math.max(-maxSpeed, error/20+0.05);

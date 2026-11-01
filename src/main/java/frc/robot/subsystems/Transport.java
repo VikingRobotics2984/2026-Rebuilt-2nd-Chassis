@@ -19,14 +19,17 @@ public class Transport {
         lowerVerticalPower = 0.0,
         upperVerticalPower = 0.0;
 
+    public static TalonFXConfigurator configurator;
+    public static CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
+
     public static final int horizontalMaxCurrent = 10;// current max for horizontal motor
     public static final int upperVerticalMaxCurrent = 11;// current max for upper vertical motor
     public static final int lowerVerticalMaxCurrent = 18;// current max for lower vertical motor
     // configure the current limits for the motor
     public static void configureCurrentLimit(){
         // do it for lower vertical motor
-        TalonFXConfigurator configurator = lowerVerticalTransportMotor.getConfigurator();
-        CurrentLimitsConfigs limitConfigs = new CurrentLimitsConfigs();
+        configurator = lowerVerticalTransportMotor.getConfigurator();
+        limitConfigs = new CurrentLimitsConfigs();
         limitConfigs.SupplyCurrentLimit = lowerVerticalMaxCurrent;
         limitConfigs.SupplyCurrentLimitEnable = true;
         configurator.apply(limitConfigs);
@@ -54,14 +57,14 @@ public class Transport {
     }
 
     
-    public static void transportPower(){
+    public static void transportPower(boolean shuttle){
         int kitchenStovePos = Math.max(0, Driver_Controller.kitchenStove()-7)*0+4;
         
         if (Driver_Controller.buttonReverseShooter() || Driver_Controller.buttonReverseTransport()){
             horizontalPower = -(powerArray[kitchenStovePos]+0.2);
             lowerVerticalPower = -(powerArray[kitchenStovePos]+0.1);
             upperVerticalPower = -powerArray[kitchenStovePos];
-        }else if ((Driver_Controller.buttonTransport() || DriverStation.isAutonomousEnabled()) && Shooter.close && (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)){
+        }else if (Driver_Controller.buttonTransport() && (shuttle || Shooter.close) && (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)){//TODO fixme
             horizontalPower = powerArray[kitchenStovePos]+0.2;
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
@@ -70,6 +73,7 @@ public class Transport {
                 lowerVerticalPower = 0.5;
                 upperVerticalPower = 0.5;
         }else {
+            //if (System.nanoTime()&0x7fffffff)>>28) < 3
             if (System.nanoTime()%(2500*1000*1000) < (750*1000*1000) && Driver_Controller.switchIntakeRoller()){
                 horizontalPower = powerArray[kitchenStovePos]+0.2;
                 lowerVerticalPower = (powerArray[kitchenStovePos]+0.1)*0;
@@ -80,5 +84,8 @@ public class Transport {
             
             upperVerticalPower = 0.0;
         }
+    }
+    public static void transportPower(){
+        transportPower(false);
     }
 }

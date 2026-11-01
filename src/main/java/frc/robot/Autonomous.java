@@ -34,7 +34,7 @@ public class Autonomous {
         Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
         Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
         Boolean flippedAngle = false;
-        if (odoX < centerX) {
+        if (alliance == 'B') {
             if (odoX < hubX){
                 flippedAngle = true;
             }
@@ -49,7 +49,7 @@ public class Autonomous {
     }
 
     public static Double destX1, destX2, destY, targetAngle;
-    public static boolean autoRamp(){
+    public static boolean autoRamp(boolean orient){
         Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
         Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
         switch(autoRampState){
@@ -80,7 +80,7 @@ public class Autonomous {
                 autoRampState++;
             case 1:
                 // wait until we are turned correctly
-                if (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-targetAngle) > 5){
+                if (orient && (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-targetAngle) > 5)){
                     Driver_Controller.SwerveCommandEncoderValue = targetAngle;
                     return false;
                 } 
@@ -106,6 +106,8 @@ public class Autonomous {
         Driver_Controller.SwerveCommandEncoderValue = targetAngle;
         return false;
     }
+
+    public static boolean autoRamp(){return autoRamp(true);}
 
     public static Double driveAngle = null;
     public static Boolean fullPassAuto(){
@@ -149,9 +151,9 @@ public class Autonomous {
                 if (AutoDrive.driveSpline(driveAngle)){
                     Double xPos, yPos = centerY;
                     if (alliance == 'B'){
-                        xPos = centerX-0.3;
+                        xPos = centerX+0.1;
                     }else{
-                        xPos = centerX+0.3;
+                        xPos = centerX-0.1;
                     }
                     if (odoY < centerY){
                         yPos += 1;
@@ -179,6 +181,7 @@ public class Autonomous {
         return false;
     }
 
+    public static double targAngle = -99999;
     public static Boolean halfPassAuto(){
         Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
         Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
@@ -220,9 +223,9 @@ public class Autonomous {
                 if (AutoDrive.driveSpline(driveAngle)){
                     Double xPos, yPos = centerY;
                     if (alliance == 'B'){
-                        xPos = centerX-0.2;
+                        xPos = centerX+0.1;
                     }else{
-                        xPos = centerX+0.2;
+                        xPos = centerX-0.1;
                     }
                     if (odoY < centerY){
                         yPos -= 0.4;
@@ -230,7 +233,7 @@ public class Autonomous {
                         yPos += 0.4;
                     }
                     autoRampState = 0;
-                    AutoDrive.setSpline(xPos, yPos, 0.0, (xPos-centerX)*endVeloMult*Math.min(1.5, speed), Math.min(1.5, speed), 50);
+                    AutoDrive.setSpline(xPos, yPos, 0.0, (yPos-centerY)*endVeloMult*Math.min(1.5, speed), Math.min(1.5, speed), 50);
                     autoState++;
                 }
                 break;
@@ -245,7 +248,16 @@ public class Autonomous {
             case 5:
                 Robot.rollerPow = -1.0;
                 Robot.spinShooters = true;
-                return autoRamp();
+                if (odoX > (hubX+(bumpWidth/2+1.5)) && odoX < ((centerX*2)-hubX-(bumpWidth/2+1.5))){
+                    if (alliance == 'B'){
+                        targAngle = 180;
+                    }else targAngle = 0;
+                }if ((Math.abs(targAngle) < 1) || (Math.abs(targAngle-180) < 1))
+                    targAngle = orientBump();
+                return autoRamp(false);
+        }
+        if (autoState == 5){
+            Driver_Controller.SwerveCommandEncoderValue = targAngle;
         }
         return false;
     }
@@ -326,6 +338,10 @@ public class Autonomous {
                 return autoRamp();
         }
         return false;
+    }
+
+    public static Boolean autoDepot(){
+        return true;
     }
 
     public static Boolean toBump(){

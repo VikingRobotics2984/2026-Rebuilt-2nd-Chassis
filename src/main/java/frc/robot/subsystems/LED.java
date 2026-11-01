@@ -6,6 +6,10 @@ public class LED {
     public static Boolean working = false;
     public static final Boolean printPattern = false;
 
+    public static final char rainbow = 'w';
+    public static final char warning = 'a';
+    public static final char error = 'e';
+
     public static void assignPort(){
         try{
             arduino = new SerialPort(9600, SerialPort.Port.kUSB1);
@@ -36,7 +40,7 @@ public class LED {
             try{
                 arduino.writeString(""+newPattern);
             }catch(Exception e){
-                System.out.println("UH OH leds failed");
+                if (printPattern)System.out.println("UH OH leds failed");
             }
         }
     }
@@ -56,27 +60,8 @@ public class LED {
             try{
                 arduino.writeString(""+newDistance);
             }catch(Exception e){
-                System.out.println("UH OH leds failed");
+                if (printPattern)System.out.println("UH OH leds failed");
             }
-        }
-    }
-
-    public static void setPattern(String newPattern){
-        switch(newPattern){
-            case "rainbow":
-            case "Rainbow":
-                setPattern('w'); // rainbow pattern
-                break;
-            case "Error":
-            case "error":
-                setPattern('e'); // solid red
-                break;
-            case "Warn":
-            case "warn":
-            case "Warning":
-            case "warning":
-                setPattern('a'); // solid red
-                break;
         }
     }
 }

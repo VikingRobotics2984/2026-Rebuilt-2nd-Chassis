@@ -33,8 +33,10 @@ public class Shooter {
             hubX = Autonomous.centerX*2-Autonomous.hubX;//if red alliance, flip the hub x over the center
         }
         dist = Math.sqrt(
-            Math.pow(posX-hubX, 2)+
-            Math.pow(posY-hubY, 2)
+            // Math.pow(posX-hubX, 2)+
+            // Math.pow(posY-hubY, 2)
+            (posX-hubX)*(posX-hubX)+
+            (posY-hubY)*(posY-hubY)
         );
 
         int lBound = 0, uBound = 1;

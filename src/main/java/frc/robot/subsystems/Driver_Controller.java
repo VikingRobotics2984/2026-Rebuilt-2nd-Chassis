@@ -33,6 +33,7 @@ public class Driver_Controller {
     public static Joystick m_Controller1 = new Joystick(1);
     public static XboxController m_Controller2 = new XboxController(0);
     public static XboxController m_Controller3 = new XboxController(2);
+    public static XboxController m_driveController = new XboxController(1);
     private static XboxController m_tempController;
     public static int SwerveCommandXboxControllerPort; // Value of joystick for controlling swerve drive
     public static int SwerveRotaryEncoderPort;         // Value of rotary encoder for controlling swerve drive
@@ -119,9 +120,31 @@ public static Boolean buttonReverseIntake(){
     return m_Controller3.getRawButton(7);}
 public static Boolean switchIntakeRoller(){
     return m_Controller3.getRawButton(10);}
+public static Boolean buttonUseLimit(){
+    return m_Controller2.getRawButton(3);}
 
 public static Boolean buttonBrake(){
     return false;//m_Controller1.getRawButton(1);
+}
+
+public static long[] lastOn = {Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE},
+    lastOff = {Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE};
+public static XboxController[] controllers = {m_Controller2, m_Controller3, m_driveController};
+public static Boolean checkControllers(){
+    long curTime = System.nanoTime();
+    for (int i = 0; i < 3; ++i){
+        if (controllers[i].getRawButton(17)){
+            lastOn[i] = curTime;
+        }else lastOff[i] = curTime;
+
+        if ((lastOff[i] != Long.MAX_VALUE) || (lastOn[i] != Long.MAX_VALUE))
+            continue;
+
+        double diff = Math.abs(lastOn[i]-lastOff[i]);
+        if (diff > 1000*1000*1000)
+            return false;
+    }
+    return true;
 }
 
 public static Boolean withinDeadBand(){
@@ -181,7 +204,7 @@ public static void SwerveInputPeriodic(){
         SwerveYPassthrough = SwerveCommandYValue;
     }
     else{ //Controller Mode
-        Double sliderMult = Driver_Controller.upperDriverSlider()*0.7+0.8;
+        Double sliderMult = Driver_Controller.upperDriverSlider()*0.45+0.55;
         SwerveXPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX(), m_Controller0.getLeftY())[0]*sliderMult;
         SwerveYPassthrough = -RobotContainer.betterJoystickCurve(m_Controller0.getLeftX(), m_Controller0.getLeftY())[1]*sliderMult;
         SwerveEncoderPassthrough = Math.toDegrees(Math.atan2(SwerveXPassthrough, SwerveYPassthrough));

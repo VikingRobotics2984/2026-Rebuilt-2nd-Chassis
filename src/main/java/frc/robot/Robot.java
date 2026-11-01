@@ -8,9 +8,13 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -35,6 +39,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     Intake.configureCurrentLimit(new double[]{Intake.maxCurrent, Intake.maxCurrent});
+    Intake.changeRollerLimit(true);
     Transport.configureCurrentLimit();
     Constants.Vision.readLayout();
     LED.assignPort();
@@ -62,11 +67,11 @@ public class Robot extends TimedRobot {
   public void disabledPeriodic() {
     LED.setDistance('n');
     if ((vision.camera.isConnected() && vision2.camera.isConnected()) == false){
-      LED.setPattern('e'); // don't have cameras
+      LED.setPattern(LED.error); // don't have cameras
     }else if (vision.seenTags || vision2.seenTags){
-      LED.setPattern("rainbow"); // either camera seeing good stuff
+      LED.setPattern(LED.rainbow); // either camera seeing good stuff
     }else{
-      LED.setPattern("warn");
+      LED.setPattern(LED.warning);
     }
   }
 
@@ -75,10 +80,12 @@ public class Robot extends TimedRobot {
   
   public static int autoState = 0, waitCnt = 0, scorePos, shootingTime;
   public static Boolean keepSpinning;
-  public static String selectedPass, hopperState, secondPass, endPos;
+  public static String selectedPass, secondPass, endPos;
+  public static Double hopperState;
 
   @Override
   public void autonomousInit() {
+    powerMod = 1.0;
     Intake.needReset = true;
     Autonomous.setupAutos();
     autoState = 0;
@@ -90,7 +97,7 @@ public class Robot extends TimedRobot {
     scorePos = RobotContainer.shootPositionChooser.getSelected();
     endPos = RobotContainer.lastPositionChooser.getSelected();
     shootingTime = (int)(RobotContainer.shootTimer.getSelected()*50);
-    hopperState = "retracted";
+    hopperState = Intake.retract;
   }
 
   public static Boolean transporting = false, spinShooters = false;
@@ -118,14 +125,14 @@ public class Robot extends TimedRobot {
       case 1: // do our first pass or stay and shoot
         switch (selectedPass) {
           case "full":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             if (Autonomous.fullPassAuto()){
               autoState++;
               Autonomous.setScoringSpline();
             }
             break;
           case "half":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             if (Autonomous.halfPassAuto()){
               autoState++;
               Autonomous.setScoringSpline();
@@ -136,11 +143,14 @@ public class Robot extends TimedRobot {
             break;
           case "no intake":
             spinShooters = true;
+            orienting = true;
             Double xError = ((alliance=='B')?2:(Autonomous.centerX*2-2))-odoX;
-            Driver_Controller.SwerveCommandXValue = Math.max(-0.5, Math.min(xError, 0.5));
+            if (xError < 0) Driver_Controller.SwerveCommandXValue = -0.5;
+            else Driver_Controller.SwerveCommandXValue = 0.5;
+            System.out.println(Driver_Controller.SwerveCommandXValue);
             Driver_Controller.SwerveCommandYValue = 0.0;
-            if (xError < 0.1)
-              autoState = 6; // skip to the "second" shooting part
+            if (Math.abs(xError) < 0.1)
+              autoState = 7; // skip to the "second" shooting part
             break;
         }
         break;
@@ -165,7 +175,7 @@ public class Robot extends TimedRobot {
         break;
       case 4: // shoot until our scoring timer runs out
         RobotContainer.stopMovement();
-        hopperState = "retract";
+        hopperState = Intake.retract;
         if (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 7) rollerPow = -1.0;// run the motor unless mostly retracted
         orienting = spinShooters = transporting = true;
         if (--waitCnt < 0){// waitCnt was chosen by smartDashboard
@@ -180,7 +190,7 @@ public class Robot extends TimedRobot {
             autoState = 7;
             break;
           case "half":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             rollerPow = -1.0;
             if (Autonomous.closeHalfPass()){
               autoState++;
@@ -188,7 +198,7 @@ public class Robot extends TimedRobot {
             }
             break;
           case "full":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             rollerPow = -1.0;
             if (Autonomous.closeFullPass()){
               autoState++;
@@ -209,7 +219,7 @@ public class Robot extends TimedRobot {
 
       case 7: // shoot our hopper
         RobotContainer.stopMovement();
-        hopperState = "retract";
+        hopperState = Intake.retract;
         if (Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble() > 7) rollerPow = -1.0;
         orienting = spinShooters = transporting = true;
         if (--waitCnt < 0){// waitCnt was chosen by smartDashboard
@@ -226,7 +236,7 @@ public class Robot extends TimedRobot {
             break;
 
           case "bump":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             Driver_Controller.SwerveCommandEncoderValue = Autonomous.orientBump();
             if (Autonomous.toBump()){
               RobotContainer.stopMovement();
@@ -234,7 +244,7 @@ public class Robot extends TimedRobot {
             }
             break;
           case "neutral":
-            hopperState = "extend";
+            hopperState = Intake.extend;
             if (Autonomous.autoRamp()){
               autoState++;
               RobotContainer.stopMovement();
@@ -257,7 +267,7 @@ public class Robot extends TimedRobot {
     }
     Transport.autoTransportPower();
     if (transporting){
-      hopperState = "retract";
+      hopperState = Intake.retract;
     }
 
     Double[] linkagePow = Intake.resetLinkageEncoders();
@@ -272,6 +282,7 @@ public class Robot extends TimedRobot {
     Intake.motorList[0].set(linkagePow[0]);
     Intake.motorList[1].set(linkagePow[1]);
     Driver_Controller.SwerveControlSet(true);
+    
   }
 
   @Override
@@ -332,9 +343,13 @@ public class Robot extends TimedRobot {
     }
   }
 
+  public static int calledCnt = 0;
+  public static double minVolts = 14;
   
   @Override
   public void teleopInit() {
+    minVolts = 14;
+    calledCnt = 0;
     Driver_Controller.define_Controller();
     RobotContainer.rotaryCalc(true);
     //Intake.needReset = true;
@@ -342,14 +357,19 @@ public class Robot extends TimedRobot {
     alliance = DriverStation.getAlliance().toString().charAt(9);
   }
 
+  public static double powerMod = 1;
+  public static long prevTime = -99999;
+
   @Override
   public void teleopPeriodic() {
+    calledCnt++;
     Driver_Controller.reverseTiming();
     Double[] linkagePow = {0.0, 0.0};
     Double rollerPow = 0.0;
     Double shooterSpeed = Shooter.interpolatePower();
     if (Driver_Controller.buttonUseOffset()) shooterSpeed += 5*(Driver_Controller.lowerDriverSlider());
     Double shooterPow = 0.0;
+    Intake.changeRollerLimit(Driver_Controller.buttonUseLimit());
 
     Double odoX = RobotContainer.drivetrain.getState().Pose.getX();
     Double odoY = RobotContainer.drivetrain.getState().Pose.getY();
@@ -358,6 +378,7 @@ public class Robot extends TimedRobot {
     inAllianceZone |= (alliance == 'R' && odoX > (Autonomous.centerX*2-Autonomous.hubX));
 
     if (inAllianceZone){
+      Transport.transportPower();
       Double ourHubX = (alliance == 'B')?
         Autonomous.hubX:
         (Autonomous.centerX*2-Autonomous.hubX);
@@ -371,6 +392,7 @@ public class Robot extends TimedRobot {
         LED.setDistance('g');
       }
     }else{
+      Transport.transportPower(true);
       LED.setDistance('n');
     }
 
@@ -378,9 +400,9 @@ public class Robot extends TimedRobot {
       shooterPow = Shooter.speedController(shooterSpeed);
     }else{
       if (vision.seenTags || vision2.seenTags){
-        LED.setPattern("rainbow");
+        LED.setPattern(LED.rainbow);
       }else{
-        LED.setPattern("warn");
+        LED.setPattern(LED.warning);
       }
     }
 
@@ -400,14 +422,32 @@ public class Robot extends TimedRobot {
     if (!resetting){
       
       if (Driver_Controller.buttonIntakeIn()){
-        linkagePow = Intake.moveIntakeTo("retract");
+        linkagePow = Intake.moveIntakeTo(Intake.retract);
       }else if (Driver_Controller.buttonIntakeOut()){
-        linkagePow = Intake.moveIntakeTo("extend");
+        linkagePow = Intake.moveIntakeTo(Intake.extend);
       }else{
-        linkagePow = Intake.moveIntakeTo("neutral");
+        linkagePow = Intake.moveIntakeTo(Intake.neutral);
       }
     }
-    Transport.transportPower();
+
+    double topCurrent = 1;
+    double bottomCurrent = 0.3;
+    double topVoltage = 9;
+    double voltDist = 1;
+    if (RobotController.getBatteryVoltage() < topVoltage){
+      powerMod = bottomCurrent+Math.min(topCurrent-bottomCurrent, Math.max(0, (topCurrent-bottomCurrent)*(1/voltDist)*(RobotController.getBatteryVoltage()-topVoltage-voltDist)));
+    }else{
+      powerMod = Math.min(1, powerMod+0.01);
+      
+    }
+    powerMod = Math.min(1.0, Math.max(0.3, powerMod));
+    // TalonFXConfiguration toApply = new TalonFXConfiguration();
+    //   CurrentLimitsConfigs supplyLimit = toApply.CurrentLimits;
+    //   supplyLimit.SupplyCurrentLimitEnable = true;
+    //   supplyLimit.SupplyCurrentLimit = swerveCurrentLimit;
+    //   for (TalonFX motor : swerveDrives){
+    //     //motor.getConfigurator().apply(toApply);
+    //   }
 
     if (Driver_Controller.buttonEBrake()){
       linkagePow[0] = 0.0;
@@ -444,20 +484,27 @@ public class Robot extends TimedRobot {
         Driver_Controller.SwerveControlSet(false);
       }
     }
-    Intake.intakeRollerMotor.set(rollerPow);
+    Intake.intakeRollerMotor.set(rollerPow*powerMod);
     Intake.motorList[0].set(linkagePow[0]);
     Intake.motorList[1].set(linkagePow[1]);
-    Transport.horizontalTransportMotor.set(TalonSRXControlMode.PercentOutput, Transport.horizontalPower);
-    Transport.upperVerticalTransportMotor.set(TalonSRXControlMode.PercentOutput, -Transport.upperVerticalPower);
-    Transport.lowerVerticalTransportMotor.set(Transport.lowerVerticalPower);
-    Shooter.leftShooter.set(shooterPow);
-    Shooter.rightShooter.set(shooterPow);
-    if (System.nanoTime()%(500*1000*1000) < (20*1000*1000)){
-      // System.out.println(shooterSpeed);
-      // System.out.println(Shooter.dist);
-      // System.out.println(Math.abs(Shooter.rightShooter.getVelocity().getValueAsDouble())-shooterSpeed);
-      // System.out.println();
-    }
+    Transport.horizontalTransportMotor.set(TalonSRXControlMode.PercentOutput, Transport.horizontalPower*powerMod);
+    Transport.upperVerticalTransportMotor.set(TalonSRXControlMode.PercentOutput, -Transport.upperVerticalPower*powerMod);
+    Transport.lowerVerticalTransportMotor.set(Transport.lowerVerticalPower*powerMod);
+    Shooter.leftShooter.set(shooterPow*powerMod);
+    Shooter.rightShooter.set(shooterPow*powerMod);
+    
+    // minVolts = Math.min(minVolts, RobotController.getBatteryVoltage());
+    // long curTime = System.nanoTime();//Math.toIntExact(Math.round(DriverStation.getMatchTime()));
+    // if (Math.abs(curTime-prevTime) >= (1000*1000*1000)){
+    //   System.out.printf("voltage=%.3f, min=%.3f \ncalled %d times\ntime left=%d\nX=%.3f, Y=%.3f, angle=%.2f\nLinkage L=%.3f, R=%.3f\n",
+    //     RobotController.getBatteryVoltage(), minVolts,
+    //     calledCnt,
+    //     Math.toIntExact(Math.round(DriverStation.getMatchTime())),
+    //     odoX, odoY, RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees(),
+    //     Intake.leftLinkageMotor.getRotorPosition().getValueAsDouble(), Intake.rightLinkageMotor.getRotorPosition().getValueAsDouble());
+    //     prevTime = curTime;
+    // }
+
     Driver_Controller.autoShootLastPressed = Driver_Controller.buttonIntakeIn();
   }
 
