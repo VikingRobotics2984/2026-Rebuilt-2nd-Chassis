@@ -65,7 +65,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
-    LED.setDistance('n');
     if ((vision.camera.isConnected() && vision2.camera.isConnected()) == false){
       LED.setPattern(LED.error); // don't have cameras
     }else if (vision.seenTags || vision2.seenTags){
@@ -113,7 +112,6 @@ public class Robot extends TimedRobot {
     Transport.horizontalPower = 0.0;
     Transport.lowerVerticalPower = 0.0;
     Transport.upperVerticalPower = 0.0;
-
     switch (autoState){
       case 0://wait for the correct amount of time
         if (--waitCnt < 0){// waitCnt was chosen by smartDashboard
@@ -147,7 +145,6 @@ public class Robot extends TimedRobot {
             Double xError = ((alliance=='B')?2:(Autonomous.centerX*2-2))-odoX;
             if (xError < 0) Driver_Controller.SwerveCommandXValue = -0.5;
             else Driver_Controller.SwerveCommandXValue = 0.5;
-            System.out.println(Driver_Controller.SwerveCommandXValue);
             Driver_Controller.SwerveCommandYValue = 0.0;
             if (Math.abs(xError) < 0.1)
               autoState = 7; // skip to the "second" shooting part
@@ -288,6 +285,14 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousExit() {}
 
+  // trying to find the smallest difference between 2 angles
+  // otherwise, the difference bwtween -175 and 175 degrees is 350, but it should be 10
+  public static Double absAngleDiffDeg(Double angle1, Double angle2){
+    Double diff = Math.abs(angle1-angle2)%360;
+    Double diff2 = 360-diff;
+    return Math.min(diff, diff2);
+  }
+
   public static Integer activeTime(){
     Integer time = Math.toIntExact(Math.round(DriverStation.getMatchTime()));
     String gameData = DriverStation.getGameSpecificMessage(); // alliance with first inactive shift
@@ -386,14 +391,8 @@ public class Robot extends TimedRobot {
         Math.pow(ourHubX-odoX, 2)+
         Math.pow(Autonomous.centerY-odoY, 2)
       );
-      if (dist < Shooter.interpolationDists[1]){ // if we are below the minimum distance for shooting in interpolatation distances
-        LED.setDistance('r'); // too close
-      }else{
-        LED.setDistance('g');
-      }
     }else{
       Transport.transportPower(true);
-      LED.setDistance('n');
     }
 
     if (Driver_Controller.shooterSwitch()){

@@ -46,8 +46,7 @@ public class Transport {
     public static void autoTransportPower(){
         int kitchenStovePos = 4;
         horizontalPower = powerArray[kitchenStovePos]+0.2;
-        if (Shooter.close && Robot.transporting && ((Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)
-            || (!Driver_Controller.SwerveCommandControl))){
+        if (Shooter.close && Robot.transporting && (Robot.absAngleDiffDeg(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees(), Driver_Controller.SwerveCommandEncoderValue) < 10)){
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
         }else {
@@ -64,7 +63,7 @@ public class Transport {
             horizontalPower = -(powerArray[kitchenStovePos]+0.2);
             lowerVerticalPower = -(powerArray[kitchenStovePos]+0.1);
             upperVerticalPower = -powerArray[kitchenStovePos];
-        }else if (Driver_Controller.buttonTransport() && (shuttle || Shooter.close) && (Math.abs(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees()-Driver_Controller.SwerveCommandEncoderValue) < 10)){//TODO fixme
+        }else if (Driver_Controller.buttonTransport() && (shuttle || Shooter.close) && (Robot.absAngleDiffDeg(RobotContainer.drivetrain.getState().Pose.getRotation().getDegrees(), Driver_Controller.SwerveCommandEncoderValue) < 10)){
             horizontalPower = powerArray[kitchenStovePos]+0.2;
             lowerVerticalPower = powerArray[kitchenStovePos]+0.1;
             upperVerticalPower = powerArray[kitchenStovePos]+0.2;
